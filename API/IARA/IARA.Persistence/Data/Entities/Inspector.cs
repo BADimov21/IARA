@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace IARA.Persistence.Migrations;
+namespace IARA.Persistence.Data.Entities;
 
 [Index("PersonId", Name = "UQ__Inspecto__AA2FFBE4708C57E8", IsUnique = true)]
 [Index("BadgeNumber", Name = "UQ__Inspecto__D110FD567045C85D", IsUnique = true)]

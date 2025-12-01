@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace IARA.Persistence.Migrations;
+namespace IARA.Persistence.Data.Entities;
 
 [Index("OperationId", Name = "IX_Catches_OperationId")]
 public partial class Catch

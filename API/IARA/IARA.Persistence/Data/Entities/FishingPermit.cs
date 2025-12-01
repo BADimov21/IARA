@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace IARA.Persistence.Migrations;
+namespace IARA.Persistence.Data.Entities;
 
 [Index("ValidUntil", Name = "IX_FishingPermits_ValidUntil")]
 [Index("VesselId", Name = "IX_FishingPermits_VesselId")]

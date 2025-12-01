@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace IARA.Persistence.Migrations;
+namespace IARA.Persistence.Data.Entities;
 
 [Index("InspectionDateTime", Name = "IX_Inspections_DateTime")]
 [Index("InspectorId", Name = "IX_Inspections_InspectorId")]

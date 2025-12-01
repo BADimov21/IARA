@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace IARA.Persistence.Migrations;
+namespace IARA.Persistence.Data.Entities;
 
 [Index("CatchDateTime", Name = "IX_RecCatches_CatchDateTime")]
 [Index("PersonId", Name = "IX_RecCatches_PersonId")]

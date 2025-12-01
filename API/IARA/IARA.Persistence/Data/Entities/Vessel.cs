@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace IARA.Persistence.Migrations;
+namespace IARA.Persistence.Data.Entities;
 
 [Index("InternationalNumber", Name = "IX_Vessels_InternationalNumber")]
 [Index("OwnerId", Name = "IX_Vessels_Owner")]

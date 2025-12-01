@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace IARA.Persistence.Migrations;
+namespace IARA.Persistence.Data.Entities;
 
 [Index("SpeciesName", Name = "UQ__FishSpec__304D4C0DADCFB3B4", IsUnique = true)]
 public partial class FishSpecy

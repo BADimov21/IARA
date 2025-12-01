@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace IARA.Persistence.Migrations;
+namespace IARA.Persistence.Data.Entities;
 
 [Index("PersonId", Name = "IX_TicketPurchases_PersonId")]
 [Index("TicketNumber", Name = "UQ__TicketPu__CBED06DA55E2E47D", IsUnique = true)]
