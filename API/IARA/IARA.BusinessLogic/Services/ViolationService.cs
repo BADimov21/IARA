@@ -1,0 +1,119 @@
+using IARA.DomainModel.Base;
+using IARA.DomainModel.DTOs.RequestDTOs;
+using IARA.DomainModel.DTOs.ResponseDTOs;
+using IARA.DomainModel.Filters;
+using IARA.Infrastructure.Base;
+using IARA.Infrastructure.Contracts;
+using IARA.Persistence.Data.Entities;
+
+namespace IARA.BusinessLogic.Services;
+
+public class ViolationService : BaseService, IViolationService
+{
+    public ViolationService(BaseServiceInjector injector) : base(injector)
+    {
+    }
+
+    public IQueryable<ViolationResponseDTO> GetAll(BaseFilter<ViolationFilter> filters)
+    {
+        if (string.IsNullOrEmpty(filters.FreeTextSearch))
+        {
+            return ApplyMapping(ApplyPagination(ApplyFilters(GetAllFromDatabase(), filters.Filters), filters.Page, filters.PageSize));
+        }
+        return ApplyMapping(ApplyPagination(ApplyFreeTextSearch(GetAllFromDatabase(), filters.FreeTextSearch), filters.Page, filters.PageSize));
+    }
+
+    public IQueryable<ViolationResponseDTO> Get(int id)
+    {
+        return ApplyMapping(GetAllFromDatabase().Where(v => v.Id == id));
+    }
+
+    public int Add(ViolationCreateRequestDTO dto)
+    {
+        var violation = new Violation
+        {
+            InspectionId = dto.InspectionId,
+            Description = dto.Description,
+            FineAmount = dto.FineAmount
+        };
+
+        Db.Violations.Add(violation);
+        Db.SaveChanges();
+
+        return violation.Id;
+    }
+
+    public bool Delete(int id)
+    {
+        Db.Violations.Remove(GetAllFromDatabase().Where(v => v.Id == id).Single());
+        return Db.SaveChanges() > 0;
+    }
+
+    private IQueryable<Violation> ApplyPagination(IQueryable<Violation> query, int page, int pageSize)
+    {
+        return query.Skip((page - 1) * pageSize).Take(pageSize);
+    }
+
+    private IQueryable<Violation> ApplyFreeTextSearch(IQueryable<Violation> query, string text)
+    {
+        return query.Where(v => v.Description.Contains(text));
+    }
+
+    private IQueryable<ViolationResponseDTO> ApplyMapping(IQueryable<Violation> query)
+    {
+        return (from violation in query
+                join inspection in Db.Inspections on violation.InspectionId equals inspection.Id
+                select new ViolationResponseDTO
+                {
+                    Id = violation.Id,
+                    Description = violation.Description,
+                    FineAmount = violation.FineAmount,
+                    Inspection = new InspectionSimpleResponseDTO
+                    {
+                        Id = inspection.Id,
+                        InspectionDateTime = inspection.InspectionDateTime,
+                        Location = inspection.Location
+                    }
+                });
+    }
+
+    private IQueryable<Violation> ApplyFilters(IQueryable<Violation> query, ViolationFilter? filters)
+    {
+        if (filters == null)
+        {
+            return query;
+        }
+
+        if (filters.Id != null)
+        {
+            query = query.Where(v => v.Id == filters.Id);
+        }
+
+        if (filters.InspectionId != null)
+        {
+            query = query.Where(v => v.InspectionId == filters.InspectionId);
+        }
+
+        if (!string.IsNullOrEmpty(filters.Description))
+        {
+            query = query.Where(v => v.Description.Contains(filters.Description));
+        }
+
+        if (filters.MinFineAmount != null)
+        {
+            query = query.Where(v => v.FineAmount >= filters.MinFineAmount);
+        }
+
+        if (filters.MaxFineAmount != null)
+        {
+            query = query.Where(v => v.FineAmount <= filters.MaxFineAmount);
+        }
+
+        return query;
+    }
+
+    private IQueryable<Violation> GetAllFromDatabase()
+    {
+        return Db.Violations.AsQueryable();
+    }
+}

@@ -1,0 +1,165 @@
+using IARA.DomainModel.Base;
+using IARA.DomainModel.DTOs.Common;
+using IARA.DomainModel.DTOs.RequestDTOs;
+using IARA.DomainModel.DTOs.ResponseDTOs;
+using IARA.DomainModel.Filters;
+using IARA.Infrastructure.Base;
+using IARA.Infrastructure.Contracts;
+using IARA.Persistence.Data.Entities;
+
+namespace IARA.BusinessLogic.Services;
+
+public class RecreationalCatchService : BaseService, IRecreationalCatchService
+{
+    public RecreationalCatchService(BaseServiceInjector injector) : base(injector)
+    {
+    }
+
+    public IQueryable<RecreationalCatchResponseDTO> GetAll(BaseFilter<RecreationalCatchFilter> filters)
+    {
+        if (string.IsNullOrEmpty(filters.FreeTextSearch))
+        {
+            return ApplyMapping(ApplyPagination(ApplyFilters(GetAllFromDatabase(), filters.Filters), filters.Page, filters.PageSize));
+        }
+        return ApplyMapping(ApplyPagination(ApplyFreeTextSearch(GetAllFromDatabase(), filters.FreeTextSearch), filters.Page, filters.PageSize));
+    }
+
+    public IQueryable<RecreationalCatchResponseDTO> Get(int id)
+    {
+        return ApplyMapping(GetAllFromDatabase().Where(rc => rc.Id == id));
+    }
+
+    public int Add(RecreationalCatchCreateRequestDTO dto)
+    {
+        var recreationalCatch = new RecreationalCatch
+        {
+            TicketPurchaseId = dto.TicketPurchaseId,
+            SpeciesId = dto.SpeciesId,
+            CatchDateTime = dto.CatchDateTime,
+            Location = dto.Location,
+            Quantity = dto.Quantity,
+            WeightKg = dto.WeightKg
+        };
+
+        Db.RecreationalCatches.Add(recreationalCatch);
+        Db.SaveChanges();
+
+        return recreationalCatch.Id;
+    }
+
+    public bool Delete(int id)
+    {
+        Db.RecreationalCatches.Remove(GetAllFromDatabase().Where(rc => rc.Id == id).Single());
+        return Db.SaveChanges() > 0;
+    }
+
+    private IQueryable<RecreationalCatch> ApplyPagination(IQueryable<RecreationalCatch> query, int page, int pageSize)
+    {
+        return query.Skip((page - 1) * pageSize).Take(pageSize);
+    }
+
+    private IQueryable<RecreationalCatch> ApplyFreeTextSearch(IQueryable<RecreationalCatch> query, string text)
+    {
+        return query.Where(rc => rc.Location != null && rc.Location.Contains(text));
+    }
+
+    private IQueryable<RecreationalCatchResponseDTO> ApplyMapping(IQueryable<RecreationalCatch> query)
+    {
+        return (from recreationalCatch in query
+                join ticketPurchase in Db.TicketPurchases on recreationalCatch.TicketPurchaseId equals ticketPurchase.Id
+                join person in Db.Persons on ticketPurchase.PersonId equals person.Id
+                join species in Db.FishSpecies on recreationalCatch.SpeciesId equals species.Id
+                select new RecreationalCatchResponseDTO
+                {
+                    Id = recreationalCatch.Id,
+                    CatchDateTime = recreationalCatch.CatchDateTime,
+                    Location = recreationalCatch.Location,
+                    Quantity = recreationalCatch.Quantity,
+                    WeightKg = recreationalCatch.WeightKg,
+                    TicketPurchase = new TicketPurchaseSimpleResponseDTO
+                    {
+                        Id = ticketPurchase.Id,
+                        PurchaseDateTime = ticketPurchase.PurchaseDateTime,
+                        ValidFrom = ticketPurchase.ValidFrom,
+                        ValidTo = ticketPurchase.ValidTo,
+                        Person = new PersonSimpleResponseDTO
+                        {
+                            Id = person.Id,
+                            FirstName = person.FirstName,
+                            LastName = person.LastName,
+                            EGN = person.EGN
+                        }
+                    },
+                    Species = new NomenclatureDTO
+                    {
+                        Id = species.Id,
+                        Name = species.SpeciesName
+                    }
+                });
+    }
+
+    private IQueryable<RecreationalCatch> ApplyFilters(IQueryable<RecreationalCatch> query, RecreationalCatchFilter? filters)
+    {
+        if (filters == null)
+        {
+            return query;
+        }
+
+        if (filters.Id != null)
+        {
+            query = query.Where(rc => rc.Id == filters.Id);
+        }
+
+        if (filters.TicketPurchaseId != null)
+        {
+            query = query.Where(rc => rc.TicketPurchaseId == filters.TicketPurchaseId);
+        }
+
+        if (filters.SpeciesId != null)
+        {
+            query = query.Where(rc => rc.SpeciesId == filters.SpeciesId);
+        }
+
+        if (filters.CatchDateTimeFrom != null)
+        {
+            query = query.Where(rc => rc.CatchDateTime >= filters.CatchDateTimeFrom);
+        }
+
+        if (filters.CatchDateTimeTo != null)
+        {
+            query = query.Where(rc => rc.CatchDateTime <= filters.CatchDateTimeTo);
+        }
+
+        if (!string.IsNullOrEmpty(filters.Location))
+        {
+            query = query.Where(rc => rc.Location != null && rc.Location.Contains(filters.Location));
+        }
+
+        if (filters.MinQuantity != null)
+        {
+            query = query.Where(rc => rc.Quantity >= filters.MinQuantity);
+        }
+
+        if (filters.MaxQuantity != null)
+        {
+            query = query.Where(rc => rc.Quantity <= filters.MaxQuantity);
+        }
+
+        if (filters.MinWeightKg != null)
+        {
+            query = query.Where(rc => rc.WeightKg >= filters.MinWeightKg);
+        }
+
+        if (filters.MaxWeightKg != null)
+        {
+            query = query.Where(rc => rc.WeightKg <= filters.MaxWeightKg);
+        }
+
+        return query;
+    }
+
+    private IQueryable<RecreationalCatch> GetAllFromDatabase()
+    {
+        return Db.RecreationalCatches.AsQueryable();
+    }
+}

@@ -1,0 +1,119 @@
+using IARA.DomainModel.Base;
+using IARA.DomainModel.DTOs.RequestDTOs;
+using IARA.DomainModel.DTOs.ResponseDTOs;
+using IARA.DomainModel.Filters;
+using IARA.Infrastructure.Base;
+using IARA.Infrastructure.Contracts;
+using IARA.Persistence.Data.Entities;
+
+namespace IARA.BusinessLogic.Services;
+
+public class LandingService : BaseService, ILandingService
+{
+    public LandingService(BaseServiceInjector injector) : base(injector)
+    {
+    }
+
+    public IQueryable<LandingResponseDTO> GetAll(BaseFilter<LandingFilter> filters)
+    {
+        if (string.IsNullOrEmpty(filters.FreeTextSearch))
+        {
+            return ApplyMapping(ApplyPagination(ApplyFilters(GetAllFromDatabase(), filters.Filters), filters.Page, filters.PageSize));
+        }
+        return ApplyMapping(ApplyPagination(ApplyFreeTextSearch(GetAllFromDatabase(), filters.FreeTextSearch), filters.Page, filters.PageSize));
+    }
+
+    public IQueryable<LandingResponseDTO> Get(int id)
+    {
+        return ApplyMapping(GetAllFromDatabase().Where(l => l.Id == id));
+    }
+
+    public int Add(LandingCreateRequestDTO dto)
+    {
+        var landing = new Landing
+        {
+            TripId = dto.TripId,
+            LandingDateTime = dto.LandingDateTime,
+            Port = dto.Port
+        };
+
+        Db.Landings.Add(landing);
+        Db.SaveChanges();
+
+        return landing.Id;
+    }
+
+    public bool Delete(int id)
+    {
+        Db.Landings.Remove(GetAllFromDatabase().Where(l => l.Id == id).Single());
+        return Db.SaveChanges() > 0;
+    }
+
+    private IQueryable<Landing> ApplyPagination(IQueryable<Landing> query, int page, int pageSize)
+    {
+        return query.Skip((page - 1) * pageSize).Take(pageSize);
+    }
+
+    private IQueryable<Landing> ApplyFreeTextSearch(IQueryable<Landing> query, string text)
+    {
+        return query.Where(l => l.Port.Contains(text));
+    }
+
+    private IQueryable<LandingResponseDTO> ApplyMapping(IQueryable<Landing> query)
+    {
+        return (from landing in query
+                join trip in Db.FishingTrips on landing.TripId equals trip.Id
+                select new LandingResponseDTO
+                {
+                    Id = landing.Id,
+                    LandingDateTime = landing.LandingDateTime,
+                    Port = landing.Port,
+                    Trip = new FishingTripSimpleResponseDTO
+                    {
+                        Id = trip.Id,
+                        DepartureDateTime = trip.DepartureDateTime,
+                        DeparturePort = trip.DeparturePort
+                    }
+                });
+    }
+
+    private IQueryable<Landing> ApplyFilters(IQueryable<Landing> query, LandingFilter? filters)
+    {
+        if (filters == null)
+        {
+            return query;
+        }
+
+        if (filters.Id != null)
+        {
+            query = query.Where(l => l.Id == filters.Id);
+        }
+
+        if (filters.TripId != null)
+        {
+            query = query.Where(l => l.TripId == filters.TripId);
+        }
+
+        if (filters.LandingDateTimeFrom != null)
+        {
+            query = query.Where(l => l.LandingDateTime >= filters.LandingDateTimeFrom);
+        }
+
+        if (filters.LandingDateTimeTo != null)
+        {
+            query = query.Where(l => l.LandingDateTime <= filters.LandingDateTimeTo);
+        }
+
+        if (!string.IsNullOrEmpty(filters.Port))
+        {
+            query = query.Where(l => l.Port.Contains(filters.Port));
+        }
+
+        return query;
+    }
+
+    private IQueryable<Landing> GetAllFromDatabase()
+    {
+        return Db.Landings.AsQueryable();
+    }
+}
