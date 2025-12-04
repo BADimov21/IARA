@@ -10,5 +10,6 @@ public interface IFishBatchService
     IQueryable<FishBatchResponseDTO> GetAll(BaseFilter<FishBatchFilter> filters);
     IQueryable<FishBatchResponseDTO> Get(int id);
     int Add(FishBatchCreateRequestDTO dto);
+    bool Edit(FishBatchUpdateRequestDTO dto);
     bool Delete(int id);
 }

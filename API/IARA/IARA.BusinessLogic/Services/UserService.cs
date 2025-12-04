@@ -23,12 +23,12 @@ public class UserService : BaseService, IUserService
         return ApplyMapping(ApplyPagination(ApplyFreeTextSearch(GetAllFromDatabase(), filters.FreeTextSearch), filters.Page, filters.PageSize));
     }
 
-    public IQueryable<UserResponseDTO> Get(int userId)
+    public IQueryable<UserResponseDTO> Get(int id)
     {
-        return ApplyMapping(GetAllFromDatabase().Where(u => u.UserId == userId));
+        return ApplyMapping(GetAllFromDatabase().Where(u => u.UserId == id));
     }
 
-    public int Register(UserRegisterRequestDTO dto)
+    public int Register(UserCreateRequestDTO dto)
     {
         // Check if user already exists
         var existingUser = GetAllFromDatabase().FirstOrDefault(u => u.Email == dto.Email);
@@ -41,7 +41,7 @@ public class UserService : BaseService, IUserService
         {
             Email = dto.Email,
             PasswordHash = dto.Password, // TODO: Hash password
-            Role = dto.Role
+            UserType = dto.UserType
         };
 
         Db.Users.Add(user);
@@ -52,40 +52,25 @@ public class UserService : BaseService, IUserService
 
     public UserAuthResponseDTO Login(UserLoginRequestDTO dto)
     {
-        var user = GetAllFromDatabase().FirstOrDefault(u => u.Email == dto.Email);
+        var user = GetAllFromDatabase().FirstOrDefault(u => u.Username == dto.Username);
 
         if (user == null || user.PasswordHash != dto.Password) // TODO: Hash password comparison
         {
-            throw new UnauthorizedAccessException("Invalid email or password");
+            throw new UnauthorizedAccessException("Invalid username or password");
         }
 
         return new UserAuthResponseDTO
         {
             UserId = user.UserId,
             Email = user.Email,
-            Role = user.Role,
+            UserType = user.UserType,
             Token = $"token_{user.UserId}" // TODO: Generate JWT token
         };
     }
 
-    public bool Update(UserUpdateRequestDTO dto)
+    public bool Delete(int id)
     {
-        var user = GetAllFromDatabase().Where(u => u.UserId == dto.UserId).Single();
-
-        user.Email = dto.Email;
-        user.Role = dto.Role;
-
-        if (!string.IsNullOrEmpty(dto.Password))
-        {
-            user.PasswordHash = dto.Password; // TODO: Hash password
-        }
-
-        return Db.SaveChanges() > 0;
-    }
-
-    public bool Delete(int userId)
-    {
-        Db.Users.Remove(GetAllFromDatabase().Where(u => u.UserId == userId).Single());
+        Db.Users.Remove(GetAllFromDatabase().Where(u => u.UserId == id).Single());
         return Db.SaveChanges() > 0;
     }
 
@@ -105,7 +90,12 @@ public class UserService : BaseService, IUserService
         {
             UserId = u.UserId,
             Email = u.Email,
-            Role = u.Role
+            UserType = u.UserType,
+            Username = u.Username,
+            PersonId = u.PersonId,
+            IsActive = u.IsActive,
+            CreatedDate = u.CreatedDate,
+            LastLoginDate = u.LastLoginDate
         });
     }
 
@@ -126,9 +116,29 @@ public class UserService : BaseService, IUserService
             query = query.Where(u => u.Email.Contains(filters.Email));
         }
 
-        if (!string.IsNullOrEmpty(filters.Role))
+        if (!string.IsNullOrEmpty(filters.UserType))
         {
-            query = query.Where(u => u.Role == filters.Role);
+            query = query.Where(u => u.UserType == filters.UserType);
+        }
+
+        if (filters.PersonId != null)
+        {
+            query = query.Where(u => u.PersonId == filters.PersonId);
+        }
+
+        if (filters.IsActive != null)
+        {
+            query = query.Where(u => u.IsActive == filters.IsActive);
+        }
+
+        if (filters.CreatedDateFrom != null)
+        {
+            query = query.Where(u => u.CreatedDate >= filters.CreatedDateFrom);
+        }
+
+        if (filters.CreatedDateTo != null)
+        {
+            query = query.Where(u => u.CreatedDate <= filters.CreatedDateTo);
         }
 
         return query;

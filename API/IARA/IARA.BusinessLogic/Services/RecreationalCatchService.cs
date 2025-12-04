@@ -66,8 +66,7 @@ public class RecreationalCatchService : BaseService, IRecreationalCatchService
     private IQueryable<RecreationalCatchResponseDTO> ApplyMapping(IQueryable<RecreationalCatch> query)
     {
         return (from recreationalCatch in query
-                join ticketPurchase in Db.TicketPurchases on recreationalCatch.TicketPurchaseId equals ticketPurchase.Id
-                join person in Db.Persons on ticketPurchase.PersonId equals person.Id
+                join person in Db.Persons on recreationalCatch.PersonId equals person.Id
                 join species in Db.FishSpecies on recreationalCatch.SpeciesId equals species.Id
                 select new RecreationalCatchResponseDTO
                 {
@@ -76,19 +75,14 @@ public class RecreationalCatchService : BaseService, IRecreationalCatchService
                     Location = recreationalCatch.Location,
                     Quantity = recreationalCatch.Quantity,
                     WeightKg = recreationalCatch.WeightKg,
-                    TicketPurchase = new TicketPurchaseSimpleResponseDTO
+                    TicketPurchaseId = recreationalCatch.TicketPurchaseId,
+                    SpeciesId = recreationalCatch.SpeciesId,
+                    PersonId = recreationalCatch.PersonId,
+                    Person = new PersonSimpleResponseDTO
                     {
-                        Id = ticketPurchase.Id,
-                        PurchaseDateTime = ticketPurchase.PurchaseDateTime,
-                        ValidFrom = ticketPurchase.ValidFrom,
-                        ValidTo = ticketPurchase.ValidTo,
-                        Person = new PersonSimpleResponseDTO
-                        {
-                            Id = person.Id,
-                            FirstName = person.FirstName,
-                            LastName = person.LastName,
-                            EGN = person.EGN
-                        }
+                        Id = person.Id,
+                        FullName = person.FirstName + " " + person.LastName,
+                        EGN = person.EGN
                     },
                     Species = new NomenclatureDTO
                     {

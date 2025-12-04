@@ -33,17 +33,16 @@ public class VesselService : BaseService, IVesselService
     {
         var vessel = new Vessel
         {
-            Name = dto.Name,
-            CFR = dto.CFR,
-            ExternalMark = dto.ExternalMark,
-            RegistrationNumber = dto.RegistrationNumber,
-            PortOfRegistration = dto.PortOfRegistration,
+            InternationalNumber = dto.InternationalNumber,
+            CallSign = dto.CallSign,
+            VesselName = dto.VesselName,
             Length = dto.Length,
             Width = dto.Width,
             GrossTonnage = dto.GrossTonnage,
             EnginePower = dto.EnginePower,
             EngineTypeId = dto.EngineTypeId,
-            OwnerId = dto.OwnerId
+            OwnerId = dto.OwnerId,
+            CaptainId = dto.CaptainId
         };
 
         Db.Vessels.Add(vessel);
@@ -56,13 +55,15 @@ public class VesselService : BaseService, IVesselService
     {
         var vessel = GetAllFromDatabase().Where(v => v.Id == dto.Id).Single();
 
-        vessel.Name = dto.Name;
-        vessel.PortOfRegistration = dto.PortOfRegistration;
-        vessel.Length = dto.Length;
-        vessel.Width = dto.Width;
-        vessel.GrossTonnage = dto.GrossTonnage;
-        vessel.EnginePower = dto.EnginePower;
-        vessel.EngineTypeId = dto.EngineTypeId;
+        if (dto.CallSign != null) vessel.CallSign = dto.CallSign;
+        if (dto.VesselName != null) vessel.VesselName = dto.VesselName;
+        if (dto.Length != null) vessel.Length = dto.Length.Value;
+        if (dto.Width != null) vessel.Width = dto.Width.Value;
+        if (dto.GrossTonnage != null) vessel.GrossTonnage = dto.GrossTonnage.Value;
+        if (dto.EnginePower != null) vessel.EnginePower = dto.EnginePower.Value;
+        if (dto.EngineTypeId != null) vessel.EngineTypeId = dto.EngineTypeId.Value;
+        if (dto.OwnerId != null) vessel.OwnerId = dto.OwnerId.Value;
+        if (dto.CaptainId != null) vessel.CaptainId = dto.CaptainId.Value;
 
         return Db.SaveChanges() > 0;
     }
@@ -80,33 +81,40 @@ public class VesselService : BaseService, IVesselService
 
     private IQueryable<Vessel> ApplyFreeTextSearch(IQueryable<Vessel> query, string text)
     {
-        return query.Where(v => v.Name.Contains(text) || v.CFR.Contains(text) || v.RegistrationNumber.Contains(text));
+        return query.Where(v => v.VesselName.Contains(text) || v.InternationalNumber.Contains(text) || v.CallSign.Contains(text));
     }
 
     private IQueryable<VesselResponseDTO> ApplyMapping(IQueryable<Vessel> query)
     {
         return (from vessel in query
                 join owner in Db.Persons on vessel.OwnerId equals owner.Id
+                join captain in Db.Persons on vessel.CaptainId equals captain.Id
                 join engineType in Db.EngineTypes on vessel.EngineTypeId equals engineType.Id
                 select new VesselResponseDTO
                 {
                     Id = vessel.Id,
-                    Name = vessel.Name,
-                    CFR = vessel.CFR,
-                    ExternalMark = vessel.ExternalMark,
-                    RegistrationNumber = vessel.RegistrationNumber,
-                    PortOfRegistration = vessel.PortOfRegistration,
+                    InternationalNumber = vessel.InternationalNumber,
+                    CallSign = vessel.CallSign,
+                    VesselName = vessel.VesselName,
                     Length = vessel.Length,
                     Width = vessel.Width,
                     GrossTonnage = vessel.GrossTonnage,
                     EnginePower = vessel.EnginePower,
+                    EngineTypeId = vessel.EngineTypeId,
                     Owner = new PersonSimpleResponseDTO
                     {
                         Id = owner.Id,
-                        FirstName = owner.FirstName,
-                        LastName = owner.LastName,
+                        FullName = owner.FirstName + " " + owner.LastName,
                         EGN = owner.EGN
                     },
+                    OwnerId = vessel.OwnerId,
+                    Captain = new PersonSimpleResponseDTO
+                    {
+                        Id = captain.Id,
+                        FullName = captain.FirstName + " " + captain.LastName,
+                        EGN = captain.EGN
+                    },
+                    CaptainId = vessel.CaptainId,
                     EngineType = new NomenclatureDTO
                     {
                         Id = engineType.Id,
@@ -127,24 +135,34 @@ public class VesselService : BaseService, IVesselService
             query = query.Where(v => v.Id == filters.Id);
         }
 
-        if (!string.IsNullOrEmpty(filters.Name))
+        if (!string.IsNullOrEmpty(filters.VesselName))
         {
-            query = query.Where(v => v.Name.Contains(filters.Name));
+            query = query.Where(v => v.VesselName.Contains(filters.VesselName));
         }
 
-        if (!string.IsNullOrEmpty(filters.CFR))
+        if (!string.IsNullOrEmpty(filters.InternationalNumber))
         {
-            query = query.Where(v => v.CFR.Contains(filters.CFR));
+            query = query.Where(v => v.InternationalNumber.Contains(filters.InternationalNumber));
         }
 
-        if (!string.IsNullOrEmpty(filters.RegistrationNumber))
+        if (!string.IsNullOrEmpty(filters.CallSign))
         {
-            query = query.Where(v => v.RegistrationNumber.Contains(filters.RegistrationNumber));
+            query = query.Where(v => v.CallSign.Contains(filters.CallSign));
         }
 
         if (filters.OwnerId != null)
         {
             query = query.Where(v => v.OwnerId == filters.OwnerId);
+        }
+
+        if (filters.CaptainId != null)
+        {
+            query = query.Where(v => v.CaptainId == filters.CaptainId);
+        }
+
+        if (filters.EngineTypeId != null)
+        {
+            query = query.Where(v => v.EngineTypeId == filters.EngineTypeId);
         }
 
         if (filters.MinLength != null)

@@ -45,6 +45,18 @@ public class FishBatchService : BaseService, IFishBatchService
         return batch.Id;
     }
 
+    public bool Edit(FishBatchUpdateRequestDTO dto)
+    {
+        var batch = GetAllFromDatabase().Where(b => b.Id == dto.Id).Single();
+
+        batch.BatchCode = dto.BatchCode;
+        batch.LandingId = dto.LandingId;
+        batch.SpeciesId = dto.SpeciesId;
+        batch.WeightKg = dto.WeightKg;
+
+        return Db.SaveChanges() > 0;
+    }
+
     public bool Delete(int id)
     {
         Db.FishBatches.Remove(GetAllFromDatabase().Where(b => b.Id == id).Single());
@@ -64,18 +76,14 @@ public class FishBatchService : BaseService, IFishBatchService
     private IQueryable<FishBatchResponseDTO> ApplyMapping(IQueryable<FishBatch> query)
     {
         return (from batch in query
-                join landing in Db.Landings on batch.LandingId equals landing.Id
                 join species in Db.FishSpecies on batch.SpeciesId equals species.Id
                 select new FishBatchResponseDTO
                 {
                     Id = batch.Id,
+                    LandingId = batch.LandingId,
+                    SpeciesId = batch.SpeciesId,
                     BatchCode = batch.BatchCode,
                     WeightKg = batch.WeightKg,
-                    Landing = new NomenclatureDTO
-                    {
-                        Id = landing.Id,
-                        Name = $"Landing {landing.Port}"
-                    },
                     Species = new NomenclatureDTO
                     {
                         Id = species.Id,

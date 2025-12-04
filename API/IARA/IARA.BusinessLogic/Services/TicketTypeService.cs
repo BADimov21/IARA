@@ -34,7 +34,9 @@ public class TicketTypeService : BaseService, ITicketTypeService
         {
             TypeName = dto.TypeName,
             ValidityDays = dto.ValidityDays,
-            Price = dto.Price,
+            PriceUnder14 = dto.PriceUnder14,
+            PriceAdult = dto.PriceAdult,
+            PricePensioner = dto.PricePensioner,
             IsFreeForDisabled = dto.IsFreeForDisabled
         };
 
@@ -48,10 +50,12 @@ public class TicketTypeService : BaseService, ITicketTypeService
     {
         var ticketType = GetAllFromDatabase().Where(t => t.Id == dto.Id).Single();
 
-        ticketType.TypeName = dto.TypeName;
-        ticketType.ValidityDays = dto.ValidityDays;
-        ticketType.Price = dto.Price;
-        ticketType.IsFreeForDisabled = dto.IsFreeForDisabled;
+        if (dto.TypeName != null) ticketType.TypeName = dto.TypeName;
+        if (dto.ValidityDays != null) ticketType.ValidityDays = dto.ValidityDays.Value;
+        if (dto.PriceUnder14 != null) ticketType.PriceUnder14 = dto.PriceUnder14.Value;
+        if (dto.PriceAdult != null) ticketType.PriceAdult = dto.PriceAdult.Value;
+        if (dto.PricePensioner != null) ticketType.PricePensioner = dto.PricePensioner.Value;
+        if (dto.IsFreeForDisabled != null) ticketType.IsFreeForDisabled = dto.IsFreeForDisabled.Value;
 
         return Db.SaveChanges() > 0;
     }
@@ -79,7 +83,9 @@ public class TicketTypeService : BaseService, ITicketTypeService
             Id = t.Id,
             TypeName = t.TypeName,
             ValidityDays = t.ValidityDays,
-            Price = t.Price,
+            PriceUnder14 = t.PriceUnder14,
+            PriceAdult = t.PriceAdult,
+            PricePensioner = t.PricePensioner,
             IsFreeForDisabled = t.IsFreeForDisabled
         });
     }
@@ -101,24 +107,14 @@ public class TicketTypeService : BaseService, ITicketTypeService
             query = query.Where(t => t.TypeName.Contains(filters.TypeName));
         }
 
-        if (filters.MinValidityDays != null)
-        {
-            query = query.Where(t => t.ValidityDays >= filters.MinValidityDays);
-        }
-
-        if (filters.MaxValidityDays != null)
-        {
-            query = query.Where(t => t.ValidityDays <= filters.MaxValidityDays);
-        }
-
         if (filters.MinPrice != null)
         {
-            query = query.Where(t => t.Price >= filters.MinPrice);
+            query = query.Where(t => t.PriceAdult >= filters.MinPrice);
         }
 
         if (filters.MaxPrice != null)
         {
-            query = query.Where(t => t.Price <= filters.MaxPrice);
+            query = query.Where(t => t.PriceAdult <= filters.MaxPrice);
         }
 
         if (filters.IsFreeForDisabled != null)

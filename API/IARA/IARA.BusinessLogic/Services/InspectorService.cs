@@ -42,6 +42,16 @@ public class InspectorService : BaseService, IInspectorService
         return inspector.Id;
     }
 
+    public bool Edit(InspectorUpdateRequestDTO dto)
+    {
+        var inspector = GetAllFromDatabase().Where(i => i.Id == dto.Id).Single();
+
+        inspector.PersonId = dto.PersonId;
+        inspector.BadgeNumber = dto.BadgeNumber;
+
+        return Db.SaveChanges() > 0;
+    }
+
     public bool Delete(int id)
     {
         Db.Inspectors.Remove(GetAllFromDatabase().Where(i => i.Id == id).Single());
@@ -65,13 +75,18 @@ public class InspectorService : BaseService, IInspectorService
                 select new InspectorResponseDTO
                 {
                     Id = inspector.Id,
+                    PersonId = person.Id,
                     BadgeNumber = inspector.BadgeNumber,
-                    Person = new PersonSimpleResponseDTO
+                    Person = new PersonResponseDTO
                     {
                         Id = person.Id,
                         FirstName = person.FirstName,
+                        MiddleName = person.MiddleName,
                         LastName = person.LastName,
-                        EGN = person.EGN
+                        EGN = person.EGN,
+                        DateOfBirth = person.DateOfBirth,
+                        Address = person.Address,
+                        PhoneNumber = person.PhoneNumber
                     }
                 });
     }

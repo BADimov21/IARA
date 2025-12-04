@@ -35,14 +35,27 @@ public class InspectionService : BaseService, IInspectionService
             InspectorId = dto.InspectorId,
             VesselId = dto.VesselId,
             InspectionDateTime = dto.InspectionDateTime,
-            Location = dto.Location,
-            Notes = dto.Notes
+            InspectionType = dto.InspectionType,
+            BatchId = dto.BatchId,
+            TicketPurchaseId = dto.TicketPurchaseId,
+            IsCompliant = dto.IsCompliant
         };
 
         Db.Inspections.Add(inspection);
         Db.SaveChanges();
 
         return inspection.Id;
+    }
+
+    public bool Edit(InspectionUpdateRequestDTO dto)
+    {
+        var inspection = GetAllFromDatabase().Where(i => i.Id == dto.Id).Single();
+
+        inspection.InspectorId = dto.InspectorId;
+        inspection.VesselId = dto.VesselId;
+        inspection.InspectionDateTime = dto.InspectionDateTime;
+
+        return Db.SaveChanges() > 0;
     }
 
     public bool Delete(int id)
@@ -58,7 +71,7 @@ public class InspectionService : BaseService, IInspectionService
 
     private IQueryable<Inspection> ApplyFreeTextSearch(IQueryable<Inspection> query, string text)
     {
-        return query.Where(i => i.Location.Contains(text) || (i.Notes != null && i.Notes.Contains(text)));
+        return query.Where(i => i.InspectionType.Contains(text));
     }
 
     private IQueryable<InspectionResponseDTO> ApplyMapping(IQueryable<Inspection> query)
@@ -66,40 +79,30 @@ public class InspectionService : BaseService, IInspectionService
         return (from inspection in query
                 join inspector in Db.Inspectors on inspection.InspectorId equals inspector.Id
                 join inspectorPerson in Db.Persons on inspector.PersonId equals inspectorPerson.Id
-                join vessel in Db.Vessels on inspection.VesselId equals vessel.Id
-                join owner in Db.Persons on vessel.OwnerId equals owner.Id
+                join vessel in Db.Vessels on inspection.VesselId equals vessel.Id into vesselGroup
+                from vessel in vesselGroup.DefaultIfEmpty()
                 select new InspectionResponseDTO
                 {
                     Id = inspection.Id,
                     InspectionDateTime = inspection.InspectionDateTime,
-                    Location = inspection.Location,
-                    Notes = inspection.Notes,
+                    InspectionType = inspection.InspectionType,
+                    BatchId = inspection.BatchId,
+                    TicketPurchaseId = inspection.TicketPurchaseId,
+                    IsCompliant = inspection.IsCompliant,
+                    InspectorId = inspection.InspectorId,
                     Inspector = new InspectorSimpleResponseDTO
                     {
                         Id = inspector.Id,
                         BadgeNumber = inspector.BadgeNumber,
-                        Person = new PersonSimpleResponseDTO
-                        {
-                            Id = inspectorPerson.Id,
-                            FirstName = inspectorPerson.FirstName,
-                            LastName = inspectorPerson.LastName,
-                            EGN = inspectorPerson.EGN
-                        }
+                        FullName = inspectorPerson.FirstName + " " + inspectorPerson.LastName
                     },
-                    Vessel = new VesselSimpleResponseDTO
+                    VesselId = inspection.VesselId,
+                    Vessel = vessel != null ? new VesselSimpleResponseDTO
                     {
                         Id = vessel.Id,
-                        Name = vessel.Name,
-                        CFR = vessel.CFR,
-                        RegistrationNumber = vessel.RegistrationNumber,
-                        Owner = new PersonSimpleResponseDTO
-                        {
-                            Id = owner.Id,
-                            FirstName = owner.FirstName,
-                            LastName = owner.LastName,
-                            EGN = owner.EGN
-                        }
-                    }
+                        InternationalNumber = vessel.InternationalNumber,
+                        VesselName = vessel.VesselName
+                    } : null
                 });
     }
 
@@ -135,9 +138,29 @@ public class InspectionService : BaseService, IInspectionService
             query = query.Where(i => i.InspectionDateTime <= filters.InspectionDateTimeTo);
         }
 
-        if (!string.IsNullOrEmpty(filters.Location))
+        if (filters.VesselId != null)
         {
-            query = query.Where(i => i.Location.Contains(filters.Location));
+            query = query.Where(i => i.VesselId == filters.VesselId);
+        }
+
+        if (!string.IsNullOrEmpty(filters.InspectionType))
+        {
+            query = query.Where(i => i.InspectionType.Contains(filters.InspectionType));
+        }
+
+        if (filters.BatchId != null)
+        {
+            query = query.Where(i => i.BatchId == filters.BatchId);
+        }
+
+        if (filters.TicketPurchaseId != null)
+        {
+            query = query.Where(i => i.TicketPurchaseId == filters.TicketPurchaseId);
+        }
+
+        if (filters.IsCompliant != null)
+        {
+            query = query.Where(i => i.IsCompliant == filters.IsCompliant);
         }
 
         return query;

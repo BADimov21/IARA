@@ -43,6 +43,17 @@ public class ViolationService : BaseService, IViolationService
         return violation.Id;
     }
 
+    public bool Edit(ViolationUpdateRequestDTO dto)
+    {
+        var violation = GetAllFromDatabase().Where(v => v.Id == dto.Id).Single();
+
+        violation.InspectionId = dto.InspectionId;
+        violation.Description = dto.Description;
+        if (dto.FineAmount != null) violation.FineAmount = dto.FineAmount.Value;
+
+        return Db.SaveChanges() > 0;
+    }
+
     public bool Delete(int id)
     {
         Db.Violations.Remove(GetAllFromDatabase().Where(v => v.Id == id).Single());
@@ -62,18 +73,12 @@ public class ViolationService : BaseService, IViolationService
     private IQueryable<ViolationResponseDTO> ApplyMapping(IQueryable<Violation> query)
     {
         return (from violation in query
-                join inspection in Db.Inspections on violation.InspectionId equals inspection.Id
                 select new ViolationResponseDTO
                 {
                     Id = violation.Id,
+                    InspectionId = violation.InspectionId,
                     Description = violation.Description,
-                    FineAmount = violation.FineAmount,
-                    Inspection = new InspectionSimpleResponseDTO
-                    {
-                        Id = inspection.Id,
-                        InspectionDateTime = inspection.InspectionDateTime,
-                        Location = inspection.Location
-                    }
+                    FineAmount = violation.FineAmount
                 });
     }
 

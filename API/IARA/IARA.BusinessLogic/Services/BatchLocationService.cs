@@ -73,20 +73,14 @@ public class BatchLocationService : BaseService, IBatchLocationService
     private IQueryable<BatchLocationResponseDTO> ApplyMapping(IQueryable<BatchLocation> query)
     {
         return (from batchLocation in query
-                join batch in Db.FishBatches on batchLocation.BatchId equals batch.Id
                 select new BatchLocationResponseDTO
                 {
                     Id = batchLocation.Id,
+                    BatchId = batchLocation.BatchId,
                     LocationType = batchLocation.LocationType,
                     LocationName = batchLocation.LocationName,
                     ArrivedAt = batchLocation.ArrivedAt,
-                    DepartedAt = batchLocation.DepartedAt,
-                    Batch = new FishBatchSimpleResponseDTO
-                    {
-                        Id = batch.Id,
-                        BatchCode = batch.BatchCode,
-                        WeightKg = batch.WeightKg
-                    }
+                    DepartedAt = batchLocation.DepartedAt
                 });
     }
 

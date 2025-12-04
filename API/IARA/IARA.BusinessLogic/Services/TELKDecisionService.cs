@@ -82,8 +82,7 @@ public class TELKDecisionService : BaseService, ITELKDecisionService
                     Person = new PersonSimpleResponseDTO
                     {
                         Id = person.Id,
-                        FirstName = person.FirstName,
-                        LastName = person.LastName,
+                        FullName = person.FirstName + " " + person.LastName,
                         EGN = person.EGN
                     }
                 });

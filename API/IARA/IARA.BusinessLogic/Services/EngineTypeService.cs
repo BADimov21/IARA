@@ -33,7 +33,8 @@ public class EngineTypeService : BaseService, IEngineTypeService
         var engineType = new EngineType
         {
             TypeName = dto.TypeName,
-            FuelConsumption = dto.FuelConsumption
+            AverageFuelConsumption = dto.AverageFuelConsumption,
+            FuelUnit = dto.FuelUnit
         };
 
         Db.EngineTypes.Add(engineType);
@@ -46,8 +47,9 @@ public class EngineTypeService : BaseService, IEngineTypeService
     {
         var engineType = GetAllFromDatabase().Where(et => et.Id == dto.Id).Single();
 
-        engineType.TypeName = dto.TypeName;
-        engineType.FuelConsumption = dto.FuelConsumption;
+        if (dto.TypeName != null) engineType.TypeName = dto.TypeName;
+        if (dto.AverageFuelConsumption != null) engineType.AverageFuelConsumption = dto.AverageFuelConsumption.Value;
+        if (dto.FuelUnit != null) engineType.FuelUnit = dto.FuelUnit;
 
         return Db.SaveChanges() > 0;
     }
@@ -74,7 +76,8 @@ public class EngineTypeService : BaseService, IEngineTypeService
         {
             Id = et.Id,
             TypeName = et.TypeName,
-            FuelConsumption = et.FuelConsumption
+            AverageFuelConsumption = et.AverageFuelConsumption,
+            FuelUnit = et.FuelUnit
         });
     }
 
@@ -95,14 +98,19 @@ public class EngineTypeService : BaseService, IEngineTypeService
             query = query.Where(et => et.TypeName.Contains(filters.TypeName));
         }
 
-        if (filters.MinFuelConsumption != null)
+        if (filters.MinAverageFuelConsumption != null)
         {
-            query = query.Where(et => et.FuelConsumption >= filters.MinFuelConsumption);
+            query = query.Where(et => et.AverageFuelConsumption >= filters.MinAverageFuelConsumption);
         }
 
-        if (filters.MaxFuelConsumption != null)
+        if (filters.MaxAverageFuelConsumption != null)
         {
-            query = query.Where(et => et.FuelConsumption <= filters.MaxFuelConsumption);
+            query = query.Where(et => et.AverageFuelConsumption <= filters.MaxAverageFuelConsumption);
+        }
+
+        if (!string.IsNullOrEmpty(filters.FuelUnit))
+        {
+            query = query.Where(et => et.FuelUnit == filters.FuelUnit);
         }
 
         return query;

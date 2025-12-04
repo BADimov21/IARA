@@ -35,10 +35,10 @@ public class TicketPurchaseService : BaseService, ITicketPurchaseService
         {
             PersonId = dto.PersonId,
             TicketTypeId = dto.TicketTypeId,
-            PurchaseDateTime = dto.PurchaseDateTime,
-            ValidFrom = dto.ValidFrom,
-            ValidTo = dto.ValidTo,
-            Price = dto.Price
+            PurchaseDate = dto.PurchaseDate,
+            ValidUntil = dto.ValidUntil,
+            PricePaid = dto.PricePaid,
+            TELKDecisionId = dto.TELKDecisionId
         };
 
         Db.TicketPurchases.Add(ticketPurchase);
@@ -66,15 +66,16 @@ public class TicketPurchaseService : BaseService, ITicketPurchaseService
                 select new TicketPurchaseResponseDTO
                 {
                     Id = purchase.Id,
-                    PurchaseDateTime = purchase.PurchaseDateTime,
-                    ValidFrom = purchase.ValidFrom,
-                    ValidTo = purchase.ValidTo,
-                    Price = purchase.Price,
+                    TicketNumber = purchase.TicketNumber,
+                    PurchaseDate = purchase.PurchaseDate,
+                    ValidUntil = purchase.ValidUntil,
+                    PricePaid = purchase.PricePaid,
+                    PersonId = purchase.PersonId,
+                    TicketTypeId = purchase.TicketTypeId,
                     Person = new PersonSimpleResponseDTO
                     {
                         Id = person.Id,
-                        FirstName = person.FirstName,
-                        LastName = person.LastName,
+                        FullName = person.FirstName + " " + person.LastName,
                         EGN = person.EGN
                     },
                     TicketType = new NomenclatureDTO
@@ -107,32 +108,24 @@ public class TicketPurchaseService : BaseService, ITicketPurchaseService
             query = query.Where(tp => tp.TicketTypeId == filters.TicketTypeId);
         }
 
-        if (filters.PurchaseDateTimeFrom != null)
+        if (filters.PurchaseDateFrom != null)
         {
-            query = query.Where(tp => tp.PurchaseDateTime >= filters.PurchaseDateTimeFrom);
+            query = query.Where(tp => tp.PurchaseDate >= filters.PurchaseDateFrom);
         }
 
-        if (filters.PurchaseDateTimeTo != null)
+        if (filters.PurchaseDateTo != null)
         {
-            query = query.Where(tp => tp.PurchaseDateTime <= filters.PurchaseDateTimeTo);
+            query = query.Where(tp => tp.PurchaseDate <= filters.PurchaseDateTo);
         }
 
-        if (filters.ValidFrom != null)
+        if (filters.ValidFromDate != null)
         {
-            query = query.Where(tp => tp.ValidFrom >= filters.ValidFrom);
+            query = query.Where(tp => tp.ValidFrom >= filters.ValidFromDate);
         }
 
-        if (filters.ValidTo != null)
+        if (filters.ValidUntilDate != null)
         {
-            query = query.Where(tp => tp.ValidTo <= filters.ValidTo);
-        }
-
-        if (filters.IsActive != null)
-        {
-            var now = DateTime.Now;
-            query = filters.IsActive.Value
-                ? query.Where(tp => tp.ValidFrom <= now && tp.ValidTo >= now)
-                : query.Where(tp => tp.ValidTo < now);
+            query = query.Where(tp => tp.ValidUntil <= filters.ValidUntilDate);
         }
 
         return query;

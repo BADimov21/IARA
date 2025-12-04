@@ -37,8 +37,8 @@ public class FishingPermitService : BaseService, IFishingPermitService
             VesselId = dto.VesselId,
             IssueDate = dto.IssueDate,
             ValidFrom = dto.ValidFrom,
-            ValidTo = dto.ValidTo,
-            FishingArea = dto.FishingArea
+            ValidUntil = dto.ValidUntil,
+            IsRevoked = false
         };
 
         Db.FishingPermits.Add(permit);
@@ -51,8 +51,7 @@ public class FishingPermitService : BaseService, IFishingPermitService
     {
         var permit = GetAllFromDatabase().Where(p => p.Id == dto.Id).Single();
 
-        permit.RevokedDate = dto.RevokedDate;
-        permit.RevocationReason = dto.RevocationReason;
+        permit.IsRevoked = true;
 
         return Db.SaveChanges() > 0;
     }
@@ -70,39 +69,29 @@ public class FishingPermitService : BaseService, IFishingPermitService
 
     private IQueryable<FishingPermit> ApplyFreeTextSearch(IQueryable<FishingPermit> query, string text)
     {
-        return query.Where(p => p.PermitNumber.Contains(text) || p.FishingArea.Contains(text));
+        return query.Where(p => p.PermitNumber.Contains(text));
     }
 
     private IQueryable<FishingPermitResponseDTO> ApplyMapping(IQueryable<FishingPermit> query)
     {
         return (from permit in query
                 join vessel in Db.Vessels on permit.VesselId equals vessel.Id
-                join owner in Db.Persons on vessel.OwnerId equals owner.Id
                 select new FishingPermitResponseDTO
                 {
                     Id = permit.Id,
                     PermitNumber = permit.PermitNumber,
                     IssueDate = permit.IssueDate,
                     ValidFrom = permit.ValidFrom,
-                    ValidTo = permit.ValidTo,
-                    FishingArea = permit.FishingArea,
-                    RevokedDate = permit.RevokedDate,
-                    RevocationReason = permit.RevocationReason,
+                    ValidUntil = permit.ValidUntil,
+                    IsRevoked = permit.IsRevoked,
+                    VesselId = vessel.Id,
                     Vessel = new VesselSimpleResponseDTO
                     {
                         Id = vessel.Id,
-                        Name = vessel.Name,
-                        CFR = vessel.CFR,
-                        RegistrationNumber = vessel.RegistrationNumber,
-                        Owner = new PersonSimpleResponseDTO
-                        {
-                            Id = owner.Id,
-                            FirstName = owner.FirstName,
-                            LastName = owner.LastName,
-                            EGN = owner.EGN
-                        }
+                        InternationalNumber = vessel.InternationalNumber,
+                        VesselName = vessel.VesselName
                     },
-                    FishingGears = new List<NomenclatureDTO>() // Will be populated separately if needed
+                    FishingGears = new List<FishingGearResponseDTO>() // Will be populated separately if needed
                 });
     }
 
@@ -138,21 +127,19 @@ public class FishingPermitService : BaseService, IFishingPermitService
             query = query.Where(p => p.IssueDate <= filters.IssueDateTo);
         }
 
-        if (filters.ValidFrom != null)
+        if (filters.ValidFromDate != null)
         {
-            query = query.Where(p => p.ValidFrom >= filters.ValidFrom);
+            query = query.Where(p => p.ValidFrom >= filters.ValidFromDate);
         }
 
-        if (filters.ValidTo != null)
+        if (filters.ValidUntilDate != null)
         {
-            query = query.Where(p => p.ValidTo <= filters.ValidTo);
+            query = query.Where(p => p.ValidUntil <= filters.ValidUntilDate);
         }
 
         if (filters.IsRevoked != null)
         {
-            query = filters.IsRevoked.Value 
-                ? query.Where(p => p.RevokedDate != null) 
-                : query.Where(p => p.RevokedDate == null);
+            query = query.Where(p => p.IsRevoked == filters.IsRevoked);
         }
 
         return query;

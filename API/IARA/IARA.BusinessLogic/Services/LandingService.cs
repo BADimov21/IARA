@@ -43,6 +43,17 @@ public class LandingService : BaseService, ILandingService
         return landing.Id;
     }
 
+    public bool Edit(LandingUpdateRequestDTO dto)
+    {
+        var landing = GetAllFromDatabase().Where(l => l.Id == dto.Id).Single();
+
+        landing.TripId = dto.TripId;
+        landing.LandingDateTime = dto.LandingDateTime;
+        landing.Port = dto.Port;
+
+        return Db.SaveChanges() > 0;
+    }
+
     public bool Delete(int id)
     {
         Db.Landings.Remove(GetAllFromDatabase().Where(l => l.Id == id).Single());
@@ -62,18 +73,12 @@ public class LandingService : BaseService, ILandingService
     private IQueryable<LandingResponseDTO> ApplyMapping(IQueryable<Landing> query)
     {
         return (from landing in query
-                join trip in Db.FishingTrips on landing.TripId equals trip.Id
                 select new LandingResponseDTO
                 {
                     Id = landing.Id,
+                    TripId = landing.TripId,
                     LandingDateTime = landing.LandingDateTime,
-                    Port = landing.Port,
-                    Trip = new FishingTripSimpleResponseDTO
-                    {
-                        Id = trip.Id,
-                        DepartureDateTime = trip.DepartureDateTime,
-                        DeparturePort = trip.DeparturePort
-                    }
+                    Port = landing.Port
                 });
     }
 
