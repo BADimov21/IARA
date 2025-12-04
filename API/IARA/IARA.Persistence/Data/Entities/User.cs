@@ -1,35 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using IARA.Persistence.Data.Entities;
+using Microsoft.AspNetCore.Identity;
 
 namespace IARA.Persistence.Data.Entities;
 
-public class User
+public class User : IdentityUser
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int UserId { get; set; }
-    
-    [Required]
-    [MaxLength(100)]
-    [Column(TypeName = "nvarchar(100)")]
-    public string Username { get; set; }
-
-    [Required]
-    [MaxLength(255)]
-    [Column(TypeName = "nvarchar(255)")]
-    public string PasswordHash { get; set; }
-
-    [Required]
-    [MaxLength(255)]
-    [EmailAddress]
-    [Column(TypeName = "nvarchar(255)")]
-    public string Email { get; set; }
-
     [Required]
     [MaxLength(50)]
     [Column(TypeName = "nvarchar(50)")]
-    public string UserType { get; set; }
+    public string UserType { get; set; } = "User";
 
     [ForeignKey("Person")]
     public int? PersonId { get; set; }

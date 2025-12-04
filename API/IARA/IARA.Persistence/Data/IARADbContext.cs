@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using IARA.Persistence.Data.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace IARA.Persistence.Data;
 
-public partial class IARADbContext : DbContext
+public partial class IARADbContext : IdentityDbContext<User>
 {
     public IARADbContext()
     {
@@ -41,8 +42,6 @@ public partial class IARADbContext : DbContext
     public virtual DbSet<Inspector> Inspectors { get; set; }
 
     public virtual DbSet<Landing> Landings { get; set; }
-    
-    public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<Person> Persons { get; set; }
 

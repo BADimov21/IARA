@@ -11,8 +11,8 @@ namespace IARA.Infrastructure.Contracts;
 public interface IUserService
 {
     IQueryable<UserResponseDTO> GetAll(BaseFilter<UserFilter> filters);
-    IQueryable<UserResponseDTO> Get(int id);
-    int Register(UserCreateRequestDTO dto);
+    IQueryable<UserResponseDTO> Get(string id);
+    string Register(UserCreateRequestDTO dto);
     UserAuthResponseDTO Login(UserLoginRequestDTO dto);
-    bool Delete(int id);
+    bool Delete(string id);
 }

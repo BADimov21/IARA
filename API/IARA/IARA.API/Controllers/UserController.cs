@@ -26,7 +26,7 @@ public class UserController : Controller
     }
 
     [HttpGet]
-    public IActionResult Get([FromQuery] int id)
+    public IActionResult Get([FromQuery] string id)
     {
         return Ok(_userService.Get(id));
     }
@@ -44,7 +44,7 @@ public class UserController : Controller
     }
 
     [HttpDelete]
-    public IActionResult Delete([FromQuery] int id)
+    public IActionResult Delete([FromQuery] string id)
     {
         return Ok(_userService.Delete(id));
     }

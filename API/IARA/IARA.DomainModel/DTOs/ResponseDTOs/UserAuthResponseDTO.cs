@@ -5,7 +5,7 @@ namespace IARA.DomainModel.DTOs.ResponseDTOs;
 /// </summary>
 public class UserAuthResponseDTO
 {
-    public int UserId { get; set; }
+    public string UserId { get; set; } = null!;
     public string Username { get; set; } = null!;
     public string Email { get; set; } = null!;
     public string UserType { get; set; } = null!;
