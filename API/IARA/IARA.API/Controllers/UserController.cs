@@ -1,5 +1,4 @@
 using IARA.DomainModel.Base;
-using IARA.DomainModel.DTOs.RequestDTOs;
 using IARA.DomainModel.Filters;
 using IARA.Infrastructure.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -7,8 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IARA.API.Controllers;
 
+/// <summary>
+/// Controller for user management operations (Admin use)
+/// For authentication (Register/Login), use AuthenticationController
+/// </summary>
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize] // Require authentication for all user management operations
 public class UserController : Controller
 {
     private readonly IUserService _userService;
@@ -18,32 +22,29 @@ public class UserController : Controller
         _userService = userService;
     }
 
+    /// <summary>
+    /// Gets all users with filtering and pagination
+    /// </summary>
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<UserFilter> filters)
     {
         return Ok(_userService.GetAll(filters));
     }
 
+    /// <summary>
+    /// Gets a specific user by ID
+    /// </summary>
     [HttpGet]
     public IActionResult Get([FromQuery] string id)
     {
         return Ok(_userService.Get(id));
     }
 
-    [HttpPost]
-    public IActionResult Register([FromBody] UserCreateRequestDTO user)
-    {
-        return Ok(_userService.Register(user));
-    }
-
-    [HttpPost]
-    public IActionResult Login([FromBody] UserLoginRequestDTO credentials)
-    {
-        return Ok(_userService.Login(credentials));
-    }
-
+    /// <summary>
+    /// Deletes a user (Admin only)
+    /// </summary>
     [HttpDelete]
+    [Authorize(Roles = "Admin")] // Only admins can delete users
     public IActionResult Delete([FromQuery] string id)
     {
         return Ok(_userService.Delete(id));

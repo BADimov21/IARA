@@ -1,5 +1,4 @@
 using IARA.DomainModel.Base;
-using IARA.DomainModel.DTOs.RequestDTOs;
 using IARA.DomainModel.DTOs.ResponseDTOs;
 using IARA.DomainModel.Filters;
 using IARA.Infrastructure.Base;
@@ -8,6 +7,10 @@ using IARA.Persistence.Data.Entities;
 
 namespace IARA.BusinessLogic.Services;
 
+/// <summary>
+/// Service for user management operations (not authentication)
+/// For authentication, use AuthenticationService
+/// </summary>
 public class UserService : BaseService, IUserService
 {
     public UserService(BaseServiceInjector injector) : base(injector)
@@ -28,50 +31,6 @@ public class UserService : BaseService, IUserService
         return ApplyMapping(GetAllFromDatabase().Where(u => u.Id == id));
     }
 
-    public string Register(UserCreateRequestDTO dto)
-    {
-        // Check if user already exists
-        var existingUser = GetAllFromDatabase().FirstOrDefault(u => u.Email == dto.Email);
-        if (existingUser != null)
-        {
-            throw new InvalidOperationException("User with this email already exists");
-        }
-
-        var user = new User
-        {
-            UserName = dto.Email, // Use email as username
-            Email = dto.Email,
-            UserType = dto.UserType
-        };
-
-        // Note: Password should be hashed properly using UserManager
-        // This is a simplified version - use AuthenticationService.Register for proper user registration
-
-        Db.Users.Add(user);
-        Db.SaveChanges();
-
-        return user.Id;
-    }
-
-    public UserAuthResponseDTO Login(UserLoginRequestDTO dto)
-    {
-        var user = GetAllFromDatabase().FirstOrDefault(u => u.UserName == dto.Username);
-
-        // Note: This is simplified - use AuthenticationService.Login for proper authentication
-        if (user == null)
-        {
-            throw new UnauthorizedAccessException("Invalid username or password");
-        }
-
-        return new UserAuthResponseDTO
-        {
-            UserId = user.Id,
-            Email = user.Email ?? string.Empty,
-            UserType = user.UserType,
-            Token = $"token_{user.Id}" // TODO: Generate JWT token
-        };
-    }
-
     public bool Delete(string id)
     {
         var user = GetAllFromDatabase().FirstOrDefault(u => u.Id == id);
@@ -83,6 +42,11 @@ public class UserService : BaseService, IUserService
         return false;
     }
 
+    private IQueryable<User> GetAllFromDatabase()
+    {
+        return Db.Users;
+    }
+
     private IQueryable<User> ApplyPagination(IQueryable<User> query, int page, int pageSize)
     {
         return query.Skip((page - 1) * pageSize).Take(pageSize);
@@ -90,7 +54,7 @@ public class UserService : BaseService, IUserService
 
     private IQueryable<User> ApplyFreeTextSearch(IQueryable<User> query, string text)
     {
-        return query.Where(u => u.Email.Contains(text));
+        return query.Where(u => u.Email != null && u.Email.Contains(text));
     }
 
     private IQueryable<UserResponseDTO> ApplyMapping(IQueryable<User> query)
@@ -98,9 +62,9 @@ public class UserService : BaseService, IUserService
         return query.Select(u => new UserResponseDTO
         {
             UserId = u.Id,
-            Email = u.Email,
+            Email = u.Email ?? string.Empty,
             UserType = u.UserType,
-            Username = u.UserName,
+            Username = u.UserName ?? string.Empty,
             PersonId = u.PersonId,
             IsActive = u.IsActive,
             CreatedDate = u.CreatedDate,
@@ -115,14 +79,19 @@ public class UserService : BaseService, IUserService
             return query;
         }
 
-        if (filters.UserId != null)
+        if (!string.IsNullOrEmpty(filters.UserId))
         {
             query = query.Where(u => u.Id == filters.UserId);
         }
 
+        if (!string.IsNullOrEmpty(filters.Username))
+        {
+            query = query.Where(u => u.UserName != null && u.UserName.Contains(filters.Username));
+        }
+
         if (!string.IsNullOrEmpty(filters.Email))
         {
-            query = query.Where(u => u.Email.Contains(filters.Email));
+            query = query.Where(u => u.Email != null && u.Email.Contains(filters.Email));
         }
 
         if (!string.IsNullOrEmpty(filters.UserType))
@@ -150,12 +119,16 @@ public class UserService : BaseService, IUserService
             query = query.Where(u => u.CreatedDate <= filters.CreatedDateTo);
         }
 
+        if (filters.LastLoginDateFrom != null)
+        {
+            query = query.Where(u => u.LastLoginDate >= filters.LastLoginDateFrom);
+        }
+
+        if (filters.LastLoginDateTo != null)
+        {
+            query = query.Where(u => u.LastLoginDate <= filters.LastLoginDateTo);
+        }
+
         return query;
     }
-
-    private IQueryable<User> GetAllFromDatabase()
-    {
-        return Db.Users.AsQueryable();
-    }
 }
-
