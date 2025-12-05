@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using IARA.BusinessLogic.Services;
+using IARA.BusinessLogic.Services.Modules.CommonModule;
 using IARA.Infrastructure.Services;
 using IARA.Persistence.Data;
 using IARA.Persistence.Data.Entities;

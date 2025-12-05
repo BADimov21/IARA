@@ -15,3 +15,4 @@ public interface ITokenService
     /// <returns>JWT token string</returns>
     string GenerateToken(IEnumerable<Claim> claims, DateTime expiresAtUtc);
 }
+

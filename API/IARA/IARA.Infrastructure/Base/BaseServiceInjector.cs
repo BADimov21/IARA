@@ -1,4 +1,4 @@
-﻿using IARA.Persistence.Data;
+using IARA.Persistence.Data;
 
 namespace IARA.Infrastructure.Base;
 
