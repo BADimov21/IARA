@@ -63,6 +63,8 @@ public partial class IARADbContext : IdentityDbContext<User>
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<BatchLocation>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__BatchLoc__3214EC07D580DB2D");
