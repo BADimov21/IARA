@@ -3,7 +3,18 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using IARA.API.Middleware;
+using IARA.BusinessLogic.Services.Modules.BatchesModule;
 using IARA.BusinessLogic.Services.Modules.CommonModule;
+using IARA.BusinessLogic.Services.Modules.FishingModule;
+using IARA.BusinessLogic.Services.Modules.InspectionsModule;
+using IARA.BusinessLogic.Services.Modules.NomenclaturesModule;
+using IARA.BusinessLogic.Services.Modules.PersonsModule;
+using IARA.BusinessLogic.Services.Modules.TELKModule;
+using IARA.BusinessLogic.Services.Modules.TicketsModule;
+using IARA.BusinessLogic.Services.Modules.VesselsModule;
+using IARA.Infrastructure.Base;
+using IARA.Infrastructure.Contracts;
 using IARA.Infrastructure.Services;
 using IARA.Persistence.Data;
 using IARA.Persistence.Data.Entities;
@@ -62,9 +73,68 @@ public class Program
         // Add services to the container.
         builder.Services.AddAuthorization();
 
-        // Register custom services
+        // Add CORS policy
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAll", policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            });
+
+            options.AddPolicy("Development", policy =>
+            {
+                policy.WithOrigins("http://localhost:3000", "http://localhost:4200", "http://localhost:5173")
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .AllowCredentials();
+            });
+        });
+
+        // Register Base Service Injector
+        builder.Services.AddScoped<BaseServiceInjector>();
+
+        // Register Common Module services
         builder.Services.AddScoped<ITokenService, TokenService>();
         builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+        builder.Services.AddScoped<IUserService, UserService>();
+
+        // Register Fishing Module services
+        builder.Services.AddScoped<IFishingGearService, FishingGearService>();
+        builder.Services.AddScoped<IFishingOperationService, FishingOperationService>();
+        builder.Services.AddScoped<IFishingPermitService, FishingPermitService>();
+        builder.Services.AddScoped<IFishingTripService, FishingTripService>();
+        builder.Services.AddScoped<ICatchService, CatchService>();
+
+        // Register Batches Module services
+        builder.Services.AddScoped<IFishBatchService, FishBatchService>();
+        builder.Services.AddScoped<ILandingService, LandingService>();
+        builder.Services.AddScoped<IBatchLocationService, BatchLocationService>();
+
+        // Register Inspections Module services
+        builder.Services.AddScoped<IInspectionService, InspectionService>();
+        builder.Services.AddScoped<IInspectorService, InspectorService>();
+        builder.Services.AddScoped<IViolationService, ViolationService>();
+
+        // Register Vessels Module services
+        builder.Services.AddScoped<IVesselService, VesselService>();
+
+        // Register Persons Module services
+        builder.Services.AddScoped<IPersonService, PersonService>();
+
+        // Register TELK Module services
+        builder.Services.AddScoped<ITELKDecisionService, TELKDecisionService>();
+
+        // Register Tickets Module services
+        builder.Services.AddScoped<ITicketTypeService, TicketTypeService>();
+        builder.Services.AddScoped<ITicketPurchaseService, TicketPurchaseService>();
+        builder.Services.AddScoped<IRecreationalCatchService, RecreationalCatchService>();
+
+        // Register Nomenclatures Module services
+        builder.Services.AddScoped<IFishSpecyService, FishSpecyService>();
+        builder.Services.AddScoped<IFishingGearTypeService, FishingGearTypeService>();
+        builder.Services.AddScoped<IEngineTypeService, EngineTypeService>();
 
         // Add controllers
         builder.Services.AddControllers();
@@ -111,6 +181,9 @@ public class Program
 
         var app = builder.Build();
 
+        // Add global exception handling middleware
+        app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
@@ -123,6 +196,14 @@ public class Program
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "IARA API v1");
                 options.RoutePrefix = "swagger";
             });
+
+            // Use development CORS policy
+            app.UseCors("Development");
+        }
+        else
+        {
+            // Use production CORS policy (configure as needed)
+            app.UseCors("AllowAll");
         }
 
         app.UseHttpsRedirection();

@@ -47,6 +47,8 @@ public class FishingPermitService : BaseService, IFishingPermitService
 
     public int Add(FishingPermitCreateRequestDTO dto)
     {
+        Logger.LogInformation("Creating new fishing permit for vessel {VesselId}", dto.VesselId);
+        
         var permit = new FishingPermit
         {
             PermitNumber = dto.PermitNumber,
@@ -60,22 +62,43 @@ public class FishingPermitService : BaseService, IFishingPermitService
         Db.FishingPermits.Add(permit);
         Db.SaveChanges();
 
+        Logger.LogInformation("Created fishing permit {PermitId} with number {PermitNumber}", permit.Id, permit.PermitNumber);
+        
         return permit.Id;
     }
 
     public bool Revoke(FishingPermitRevokeRequestDTO dto)
     {
+        Logger.LogInformation("Revoking fishing permit {PermitId}", dto.Id);
+        
         var permit = GetAllFromDatabase().Where(p => p.Id == dto.Id).Single();
 
         permit.IsRevoked = true;
 
-        return Db.SaveChanges() > 0;
+        var result = Db.SaveChanges() > 0;
+        
+        if (result)
+        {
+            Logger.LogInformation("Successfully revoked fishing permit {PermitId}", dto.Id);
+        }
+        
+        return result;
     }
 
     public bool Delete(int id)
     {
+        Logger.LogInformation("Deleting fishing permit {PermitId}", id);
+        
         Db.FishingPermits.Remove(GetAllFromDatabase().Where(p => p.Id == id).Single());
-        return Db.SaveChanges() > 0;
+        
+        var result = Db.SaveChanges() > 0;
+        
+        if (result)
+        {
+            Logger.LogInformation("Successfully deleted fishing permit {PermitId}", id);
+        }
+        
+        return result;
     }
 
     private IQueryable<FishingPermit> ApplyPagination(IQueryable<FishingPermit> query, int page, int pageSize)
