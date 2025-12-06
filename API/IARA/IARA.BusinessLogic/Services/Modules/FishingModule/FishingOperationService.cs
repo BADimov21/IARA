@@ -1,4 +1,5 @@
 using IARA.DomainModel.Base;
+using IARA.DomainModel.DTOs.Common;
 using IARA.DomainModel.DTOs.RequestDTOs.Modules.FishingModule;
 using IARA.DomainModel.DTOs.ResponseDTOs.Modules.FishingModule;
 using IARA.DomainModel.DTOs.ResponseDTOs.Modules.NomenclaturesModule;
@@ -82,17 +83,10 @@ public class FishingOperationService : BaseService, IFishingOperationService
                     Id = operation.Id,
                     TripId = trip.Id,
                     FishingGearId = gear.Id,
-                    FishingGear = new FishingGearResponseDTO
+                    FishingGear = new NomenclatureDTO
                     {
                         Id = gear.Id,
-                        GearTypeId = gearType.Id,
-                        GearType = new FishingGearTypeResponseDTO
-                        {
-                            Id = gearType.Id,
-                            TypeName = gearType.TypeName
-                        },
-                        MeshSize = gear.MeshSize,
-                        Length = gear.Length
+                        Name = gearType.TypeName
                     },
                     StartDateTime = operation.StartDateTime,
                     EndDateTime = operation.EndDateTime,
@@ -122,24 +116,24 @@ public class FishingOperationService : BaseService, IFishingOperationService
             query = query.Where(o => o.FishingGearId == filters.FishingGearId);
         }
 
-        if (filters.StartDateFrom != null)
+        if (filters.StartDateTimeFrom != null)
         {
-            query = query.Where(o => o.StartDateTime >= filters.StartDateFrom);
+            query = query.Where(o => o.StartDateTime >= filters.StartDateTimeFrom);
         }
 
-        if (filters.StartDateTo != null)
+        if (filters.StartDateTimeTo != null)
         {
-            query = query.Where(o => o.StartDateTime <= filters.StartDateTo);
+            query = query.Where(o => o.StartDateTime <= filters.StartDateTimeTo);
         }
 
-        if (filters.EndDateFrom != null)
+        if (filters.EndDateTimeFrom != null)
         {
-            query = query.Where(o => o.EndDateTime >= filters.EndDateFrom);
+            query = query.Where(o => o.EndDateTime >= filters.EndDateTimeFrom);
         }
 
-        if (filters.EndDateTo != null)
+        if (filters.EndDateTimeTo != null)
         {
-            query = query.Where(o => o.EndDateTime <= filters.EndDateTo);
+            query = query.Where(o => o.EndDateTime <= filters.EndDateTimeTo);
         }
 
         if (!string.IsNullOrEmpty(filters.Location))

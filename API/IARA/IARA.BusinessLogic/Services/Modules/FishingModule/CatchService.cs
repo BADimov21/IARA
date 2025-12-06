@@ -1,4 +1,5 @@
 using IARA.DomainModel.Base;
+using IARA.DomainModel.DTOs.Common;
 using IARA.DomainModel.DTOs.RequestDTOs.Modules.FishingModule;
 using IARA.DomainModel.DTOs.ResponseDTOs.Modules.FishingModule;
 using IARA.DomainModel.DTOs.ResponseDTOs.Modules.NomenclaturesModule;
@@ -83,10 +84,10 @@ public class CatchService : BaseService, ICatchService
                     Id = catchEntity.Id,
                     OperationId = operation.Id,
                     SpeciesId = species.Id,
-                    Species = new FishSpecyResponseDTO
+                    Species = new NomenclatureDTO
                     {
                         Id = species.Id,
-                        SpeciesName = species.SpeciesName
+                        Name = species.SpeciesName
                     },
                     Quantity = catchEntity.Quantity,
                     WeightKg = catchEntity.WeightKg
@@ -115,24 +116,24 @@ public class CatchService : BaseService, ICatchService
             query = query.Where(c => c.SpeciesId == filters.SpeciesId);
         }
 
-        if (filters.QuantityMin != null)
+        if (filters.MinQuantity != null)
         {
-            query = query.Where(c => c.Quantity >= filters.QuantityMin);
+            query = query.Where(c => c.Quantity >= filters.MinQuantity);
         }
 
-        if (filters.QuantityMax != null)
+        if (filters.MaxQuantity != null)
         {
-            query = query.Where(c => c.Quantity <= filters.QuantityMax);
+            query = query.Where(c => c.Quantity <= filters.MaxQuantity);
         }
 
-        if (filters.WeightKgMin != null)
+        if (filters.MinWeightKg != null)
         {
-            query = query.Where(c => c.WeightKg >= filters.WeightKgMin);
+            query = query.Where(c => c.WeightKg >= filters.MinWeightKg);
         }
 
-        if (filters.WeightKgMax != null)
+        if (filters.MaxWeightKg != null)
         {
-            query = query.Where(c => c.WeightKg <= filters.WeightKgMax);
+            query = query.Where(c => c.WeightKg <= filters.MaxWeightKg);
         }
 
         return query;

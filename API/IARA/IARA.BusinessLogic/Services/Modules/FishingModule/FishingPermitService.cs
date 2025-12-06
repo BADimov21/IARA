@@ -3,6 +3,7 @@ using IARA.DomainModel.DTOs.Common;
 using IARA.DomainModel.DTOs.RequestDTOs.Modules.CommonModule;
 using IARA.DomainModel.DTOs.RequestDTOs.Modules.BatchesModule;
 using IARA.DomainModel.DTOs.RequestDTOs.Modules.FishingModule;
+using Microsoft.Extensions.Logging;
 using IARA.DomainModel.DTOs.RequestDTOs.Modules.InspectionsModule;
 using IARA.DomainModel.DTOs.RequestDTOs.Modules.NomenclaturesModule;
 using IARA.DomainModel.DTOs.RequestDTOs.Modules.PersonsModule;

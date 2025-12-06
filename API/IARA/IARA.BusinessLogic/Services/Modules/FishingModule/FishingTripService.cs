@@ -124,14 +124,14 @@ public class FishingTripService : BaseService, IFishingTripService
             query = query.Where(t => t.PermitId == filters.PermitId);
         }
 
-        if (filters.DepartureDateFrom != null)
+        if (filters.DepartureDateTimeFrom != null)
         {
-            query = query.Where(t => t.DepartureDateTime >= filters.DepartureDateFrom);
+            query = query.Where(t => t.DepartureDateTime >= filters.DepartureDateTimeFrom);
         }
 
-        if (filters.DepartureDateTo != null)
+        if (filters.DepartureDateTimeTo != null)
         {
-            query = query.Where(t => t.DepartureDateTime <= filters.DepartureDateTo);
+            query = query.Where(t => t.DepartureDateTime <= filters.DepartureDateTimeTo);
         }
 
         if (!string.IsNullOrEmpty(filters.DeparturePort))
@@ -139,14 +139,14 @@ public class FishingTripService : BaseService, IFishingTripService
             query = query.Where(t => t.DeparturePort.Contains(filters.DeparturePort));
         }
 
-        if (filters.ArrivalDateFrom != null)
+        if (filters.ArrivalDateTimeFrom != null)
         {
-            query = query.Where(t => t.ArrivalDateTime >= filters.ArrivalDateFrom);
+            query = query.Where(t => t.ArrivalDateTime >= filters.ArrivalDateTimeFrom);
         }
 
-        if (filters.ArrivalDateTo != null)
+        if (filters.ArrivalDateTimeTo != null)
         {
-            query = query.Where(t => t.ArrivalDateTime <= filters.ArrivalDateTo);
+            query = query.Where(t => t.ArrivalDateTime <= filters.ArrivalDateTimeTo);
         }
 
         if (!string.IsNullOrEmpty(filters.ArrivalPort))

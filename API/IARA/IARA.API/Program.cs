@@ -28,8 +28,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Add database context
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        var connectionString = "Server=(localdb)\\MSSQLLocalDB;Database=IARA;Trusted_Connection=True;TrustServerCertificate=True";
         
         builder.Services.AddDbContext<IARADbContext>(options =>
             options.UseSqlServer(connectionString));

@@ -1,4 +1,5 @@
 using IARA.DomainModel.Base;
+using IARA.DomainModel.DTOs.Common;
 using IARA.DomainModel.DTOs.RequestDTOs.Modules.FishingModule;
 using IARA.DomainModel.DTOs.ResponseDTOs.Modules.FishingModule;
 using IARA.DomainModel.DTOs.ResponseDTOs.Modules.NomenclaturesModule;
@@ -34,7 +35,7 @@ public class FishingGearService : BaseService, IFishingGearService
         var gear = new FishingGear
         {
             GearTypeId = dto.GearTypeId,
-            MeshSize = dto.MeshSize,
+            MeshSize = dto.MeshSize.HasValue ? (int?)dto.MeshSize.Value : null,
             Length = dto.Length
         };
 
@@ -48,7 +49,10 @@ public class FishingGearService : BaseService, IFishingGearService
     {
         var gear = GetAllFromDatabase().Where(g => g.Id == dto.Id).Single();
 
-        gear.GearTypeId = dto.GearTypeId;
+        if (dto.GearTypeId.HasValue)
+        {
+            gear.GearTypeId = dto.GearTypeId.Value;
+        }
         gear.MeshSize = dto.MeshSize;
         gear.Length = dto.Length;
 
@@ -79,10 +83,10 @@ public class FishingGearService : BaseService, IFishingGearService
                 {
                     Id = gear.Id,
                     GearTypeId = gearType.Id,
-                    GearType = new FishingGearTypeResponseDTO
+                    GearType = new NomenclatureDTO
                     {
                         Id = gearType.Id,
-                        TypeName = gearType.TypeName
+                        Name = gearType.TypeName
                     },
                     MeshSize = gear.MeshSize,
                     Length = gear.Length
@@ -106,24 +110,24 @@ public class FishingGearService : BaseService, IFishingGearService
             query = query.Where(g => g.GearTypeId == filters.GearTypeId);
         }
 
-        if (filters.MeshSizeMin != null)
+        if (filters.MinMeshSize != null)
         {
-            query = query.Where(g => g.MeshSize >= filters.MeshSizeMin);
+            query = query.Where(g => g.MeshSize >= filters.MinMeshSize);
         }
 
-        if (filters.MeshSizeMax != null)
+        if (filters.MaxMeshSize != null)
         {
-            query = query.Where(g => g.MeshSize <= filters.MeshSizeMax);
+            query = query.Where(g => g.MeshSize <= filters.MaxMeshSize);
         }
 
-        if (filters.LengthMin != null)
+        if (filters.MinLength != null)
         {
-            query = query.Where(g => g.Length >= filters.LengthMin);
+            query = query.Where(g => g.Length >= filters.MinLength);
         }
 
-        if (filters.LengthMax != null)
+        if (filters.MaxLength != null)
         {
-            query = query.Where(g => g.Length <= filters.LengthMax);
+            query = query.Where(g => g.Length <= filters.MaxLength);
         }
 
         return query;
