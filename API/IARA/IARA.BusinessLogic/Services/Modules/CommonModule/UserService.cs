@@ -12,6 +12,7 @@ using IARA.DomainModel.Filters;
 using IARA.Infrastructure.Base;
 using IARA.Infrastructure.Contracts;
 using IARA.Persistence.Data.Entities;
+using Microsoft.AspNetCore.Identity;
 
 namespace IARA.BusinessLogic.Services.Modules.CommonModule;
 
@@ -21,8 +22,11 @@ namespace IARA.BusinessLogic.Services.Modules.CommonModule;
 /// </summary>
 public class UserService : BaseService, IUserService
 {
-    public UserService(BaseServiceInjector injector) : base(injector)
+    private readonly UserManager<User> _userManager;
+
+    public UserService(BaseServiceInjector injector, UserManager<User> userManager) : base(injector)
     {
+        _userManager = userManager;
     }
 
     public IQueryable<UserResponseDTO> GetAll(BaseFilter<UserFilter> filters)
@@ -41,18 +45,18 @@ public class UserService : BaseService, IUserService
 
     public bool Delete(string id)
     {
-        var user = GetAllFromDatabase().FirstOrDefault(u => u.Id == id);
+        var user = _userManager.Users.FirstOrDefault(u => u.Id == id);
         if (user != null)
         {
-            Db.Users.Remove(user);
-            return Db.SaveChanges() > 0;
+            var result = _userManager.DeleteAsync(user).Result;
+            return result.Succeeded;
         }
         return false;
     }
 
     private IQueryable<User> GetAllFromDatabase()
     {
-        return Db.Users;
+        return _userManager.Users;
     }
 
     private IQueryable<User> ApplyPagination(IQueryable<User> query, int page, int pageSize)
