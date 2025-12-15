@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.BatchesModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class FishBatchController : Controller
 {
     private readonly IFishBatchService _fishBatchService;
@@ -27,7 +28,6 @@ public class FishBatchController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<FishBatchFilter> filters)
     {
         return Ok(_fishBatchService.GetAll(filters));
@@ -46,12 +46,14 @@ public class FishBatchController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] FishBatchUpdateRequestDTO batch)
     {
         return Ok(_fishBatchService.Edit(batch));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_fishBatchService.Delete(id));

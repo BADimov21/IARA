@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.NomenclaturesModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class TicketTypeController : Controller
 {
     private readonly ITicketTypeService _ticketTypeService;
@@ -27,7 +28,6 @@ public class TicketTypeController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<TicketTypeFilter> filters)
     {
         return Ok(_ticketTypeService.GetAll(filters));
@@ -46,12 +46,14 @@ public class TicketTypeController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] TicketTypeUpdateRequestDTO ticketType)
     {
         return Ok(_ticketTypeService.Edit(ticketType));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_ticketTypeService.Delete(id));

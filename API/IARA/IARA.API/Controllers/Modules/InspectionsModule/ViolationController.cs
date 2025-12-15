@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.InspectionsModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class ViolationController : Controller
 {
     private readonly IViolationService _violationService;
@@ -27,7 +28,6 @@ public class ViolationController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<ViolationFilter> filters)
     {
         return Ok(_violationService.GetAll(filters));
@@ -46,12 +46,14 @@ public class ViolationController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] ViolationUpdateRequestDTO violation)
     {
         return Ok(_violationService.Edit(violation));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_violationService.Delete(id));

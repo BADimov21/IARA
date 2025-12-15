@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.TELKModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class TELKDecisionController : Controller
 {
     private readonly ITELKDecisionService _telkDecisionService;
@@ -27,7 +28,6 @@ public class TELKDecisionController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<TELKDecisionFilter> filters)
     {
         return Ok(_telkDecisionService.GetAll(filters));
@@ -46,12 +46,14 @@ public class TELKDecisionController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] TELKDecisionUpdateRequestDTO decision)
     {
         return Ok(_telkDecisionService.Edit(decision));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_telkDecisionService.Delete(id));

@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.VesselsModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class VesselController : Controller
 {
     private readonly IVesselService _vesselService;
@@ -27,7 +28,6 @@ public class VesselController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<VesselFilter> filters)
     {
         return Ok(_vesselService.GetAll(filters));
@@ -46,12 +46,14 @@ public class VesselController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] VesselUpdateRequestDTO vessel)
     {
         return Ok(_vesselService.Edit(vessel));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_vesselService.Delete(id));

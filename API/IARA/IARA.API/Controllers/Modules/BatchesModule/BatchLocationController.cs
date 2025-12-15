@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.BatchesModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class BatchLocationController : Controller
 {
     private readonly IBatchLocationService _batchLocationService;
@@ -27,7 +28,6 @@ public class BatchLocationController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<BatchLocationFilter> filters)
     {
         return Ok(_batchLocationService.GetAll(filters));
@@ -46,12 +46,14 @@ public class BatchLocationController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Depart([FromBody] BatchLocationDepartRequestDTO location)
     {
         return Ok(_batchLocationService.Depart(location));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_batchLocationService.Delete(id));

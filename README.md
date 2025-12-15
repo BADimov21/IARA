@@ -94,16 +94,29 @@ IARA/
    cd IARA
    ```
 
-2. **Configure the database connection**
+2. **Configure environment variables**
    
-   Update `appsettings.json` in `IARA.API` project:
-   ```json
-   {
-     "ConnectionStrings": {
-       "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=IARA;Trusted_Connection=True;MultipleActiveResultSets=true"
-     }
-   }
+   Create a `.env` file in `IARA.API` project directory:
+   ```bash
+   cd API/IARA/IARA.API
+   cp .env.example .env
    ```
+   
+   Edit `.env` file with your configuration:
+   ```env
+   # Database Configuration
+   DB_CONNECTION_STRING=Server=(localdb)\\mssqllocaldb;Database=IARA_DB;Trusted_Connection=true;MultipleActiveResultSets=true
+   
+   # JWT Configuration (CHANGE IN PRODUCTION!)
+   JWT_SECRET_KEY=YourSecretKeyHereThatShouldBeAtLeast32CharactersLong
+   JWT_ISSUER=IARA.API
+   JWT_AUDIENCE=IARA.Client
+   ```
+   
+   ⚠️ **Security Notice**: 
+   - Never commit `.env` to source control (already in `.gitignore`)
+   - Generate a strong random key for production
+   - The `.env` file is loaded automatically by `DotNetEnv` package
 
 3. **Run database migrations**
    ```bash
@@ -123,22 +136,39 @@ IARA/
 
 ## 🔧 Configuration
 
+### Environment Variables
+
+The application uses environment variables for sensitive configuration. Create a `.env` file in the `IARA.API` directory:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DB_CONNECTION_STRING` | SQL Server connection string | `Server=(localdb)\\mssqllocaldb;Database=IARA_DB;...` |
+| `JWT_SECRET_KEY` | Secret key for JWT signing (min 32 chars) | Generate a secure random string |
+| `JWT_ISSUER` | JWT token issuer | `IARA.API` |
+| `JWT_AUDIENCE` | JWT token audience | `IARA.Client` |
+
+**Fallback**: If environment variables are not set, the application falls back to `appsettings.json` values (development only).
+
 ### JWT Settings
 
-Configure JWT authentication in `appsettings.json`:
+JWT configuration is managed through environment variables (`.env` file) with fallback to `appsettings.json`:
 
 ```json
 {
   "Jwt": {
-    "Issuer": "IARA-API",
-    "Audience": "IARA-Client",
-    "Key": "YourSuperSecretKeyThatIsAtLeast32CharactersLong!",
+    "Issuer": "IARA.API",
+    "Audience": "IARA.Client",
+    "Key": "FALLBACK-KEY-USE-ENV-FILE-INSTEAD-32CHARS",
     "ExpiresInMinutes": "60"
   }
 }
 ```
 
-⚠️ **Important**: Change the JWT key in production!
+⚠️ **Production Security**:
+- Always use environment variables in production
+- Generate a cryptographically secure random key (minimum 32 characters)
+- Never commit secrets to source control
+- Rotate keys periodically
 
 ### CORS Configuration
 

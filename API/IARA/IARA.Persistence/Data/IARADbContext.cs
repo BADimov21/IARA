@@ -1,4 +1,5 @@
 ﻿using System;
+using DotNetEnv;
 using System.Collections.Generic;
 using IARA.Persistence.Data.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -59,11 +60,15 @@ public partial class IARADbContext : IdentityDbContext<User>
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
+        Env.Load();
         // Connection string is configured in Program.cs via dependency injection
         // This method is only used for design-time operations (migrations)
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=IARA;Trusted_Connection=True;TrustServerCertificate=True");
+            // Try to get from environment variable first, then use default LocalDB
+            string connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") 
+                                      ?? "Server=(localdb)\\mssqllocaldb;Database=IARA_DB;Trusted_Connection=True;MultipleActiveResultSets=true";
+            optionsBuilder.UseSqlServer(connectionString);
         }
     }
 

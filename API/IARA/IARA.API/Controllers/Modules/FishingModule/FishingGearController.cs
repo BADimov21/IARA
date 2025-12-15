@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.FishingModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class FishingGearController : Controller
 {
     private readonly IFishingGearService _fishingGearService;
@@ -27,7 +28,6 @@ public class FishingGearController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<FishingGearFilter> filters)
     {
         return Ok(_fishingGearService.GetAll(filters));
@@ -46,12 +46,14 @@ public class FishingGearController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] FishingGearUpdateRequestDTO gear)
     {
         return Ok(_fishingGearService.Edit(gear));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_fishingGearService.Delete(id));

@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using DotNetEnv;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using IARA.Infrastructure.Services;
@@ -19,11 +20,24 @@ public class TokenService : ITokenService
 
     public TokenService(IConfiguration configuration)
     {
-        IConfigurationSection jwtSection = configuration.GetSection("Jwt");
-        _issuer = jwtSection["Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer missing");
-        _audience = jwtSection["Audience"] ?? throw new InvalidOperationException("Jwt:Audience missing");
-        _key = jwtSection["Key"] ?? throw new InvalidOperationException("Jwt:Key missing");
-        _expiresInMinutes = int.Parse(jwtSection["ExpiresInMinutes"] ?? "60");
+        Env.Load();
+
+        // Get values from environment variables first, then fall back to configuration
+        _issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
+                  ?? configuration["Jwt:Issuer"] 
+                  ?? throw new InvalidOperationException("JWT Issuer not configured");
+        
+        _audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
+                    ?? configuration["Jwt:Audience"] 
+                    ?? throw new InvalidOperationException("JWT Audience not configured");
+        
+        _key = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
+               ?? configuration["Jwt:Key"] 
+               ?? throw new InvalidOperationException("JWT Secret Key not configured");
+        
+        string? expiresConfig = Environment.GetEnvironmentVariable("JWT_EXPIRES_IN_MINUTES") 
+                                ?? configuration["Jwt:ExpiresInMinutes"];
+        _expiresInMinutes = int.Parse(expiresConfig ?? "60");
     }
 
     public string GenerateToken(IEnumerable<Claim> claims, DateTime expiresAtUtc)
@@ -54,6 +68,3 @@ public class TokenService : ITokenService
         return handler.WriteToken(token);
     }
 }
-
-
-

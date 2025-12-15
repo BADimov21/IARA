@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.NomenclaturesModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class FishSpecyController : Controller
 {
     private readonly IFishSpecyService _fishSpecyService;
@@ -27,7 +28,6 @@ public class FishSpecyController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<FishSpecyFilter> filters)
     {
         return Ok(_fishSpecyService.GetAll(filters));
@@ -46,12 +46,14 @@ public class FishSpecyController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] FishSpecyUpdateRequestDTO specy)
     {
         return Ok(_fishSpecyService.Edit(specy));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_fishSpecyService.Delete(id));

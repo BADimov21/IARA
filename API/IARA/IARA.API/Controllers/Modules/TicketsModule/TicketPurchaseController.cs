@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.TicketsModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class TicketPurchaseController : Controller
 {
     private readonly ITicketPurchaseService _ticketPurchaseService;
@@ -27,7 +28,6 @@ public class TicketPurchaseController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<TicketPurchaseFilter> filters)
     {
         return Ok(_ticketPurchaseService.GetAll(filters));
@@ -46,6 +46,7 @@ public class TicketPurchaseController : Controller
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_ticketPurchaseService.Delete(id));

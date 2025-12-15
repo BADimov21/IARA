@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.TicketsModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class RecreationalCatchController : Controller
 {
     private readonly IRecreationalCatchService _recreationalCatchService;
@@ -27,7 +28,6 @@ public class RecreationalCatchController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<RecreationalCatchFilter> filters)
     {
         return Ok(_recreationalCatchService.GetAll(filters));
@@ -46,6 +46,7 @@ public class RecreationalCatchController : Controller
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_recreationalCatchService.Delete(id));

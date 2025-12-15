@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.NomenclaturesModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class EngineTypeController : Controller
 {
     private readonly IEngineTypeService _engineTypeService;
@@ -27,7 +28,6 @@ public class EngineTypeController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<EngineTypeFilter> filters)
     {
         return Ok(_engineTypeService.GetAll(filters));
@@ -46,12 +46,14 @@ public class EngineTypeController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] EngineTypeUpdateRequestDTO engineType)
     {
         return Ok(_engineTypeService.Edit(engineType));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_engineTypeService.Delete(id));

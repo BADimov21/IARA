@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.InspectionsModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class InspectionController : Controller
 {
     private readonly IInspectionService _inspectionService;
@@ -27,7 +28,6 @@ public class InspectionController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<InspectionFilter> filters)
     {
         return Ok(_inspectionService.GetAll(filters));
@@ -46,12 +46,14 @@ public class InspectionController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] InspectionUpdateRequestDTO inspection)
     {
         return Ok(_inspectionService.Edit(inspection));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_inspectionService.Delete(id));

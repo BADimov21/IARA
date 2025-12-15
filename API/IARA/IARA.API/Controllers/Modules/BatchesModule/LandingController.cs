@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.BatchesModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class LandingController : Controller
 {
     private readonly ILandingService _landingService;
@@ -27,7 +28,6 @@ public class LandingController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<LandingFilter> filters)
     {
         return Ok(_landingService.GetAll(filters));
@@ -46,12 +46,14 @@ public class LandingController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] LandingUpdateRequestDTO landing)
     {
         return Ok(_landingService.Edit(landing));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_landingService.Delete(id));

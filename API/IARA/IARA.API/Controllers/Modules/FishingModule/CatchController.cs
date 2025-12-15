@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.FishingModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class CatchController : Controller
 {
     private readonly ICatchService _catchService;
@@ -27,7 +28,6 @@ public class CatchController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<CatchFilter> filters)
     {
         return Ok(_catchService.GetAll(filters));
@@ -46,12 +46,14 @@ public class CatchController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] CatchUpdateRequestDTO catchDto)
     {
         return Ok(_catchService.Edit(catchDto));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_catchService.Delete(id));

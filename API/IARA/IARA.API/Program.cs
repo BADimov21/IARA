@@ -1,4 +1,5 @@
 using System.Text;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -25,10 +26,15 @@ public class Program
 {
     public static void Main(string[] args)
     {
+        // Load environment variables from .env file
+        Env.Load();
+        
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add database context
-        var connectionString = "Server=(localdb)\\MSSQLLocalDB;Database=IARA;Trusted_Connection=True;TrustServerCertificate=True";
+        // Add database context - use .env or appsettings
+        var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") 
+                               ?? builder.Configuration.GetConnectionString("DefaultConnection")
+                               ?? throw new InvalidOperationException("Database connection string not found");
         
         builder.Services.AddDbContext<IARADbContext>(options =>
             options.UseSqlServer(connectionString));
@@ -46,9 +52,16 @@ public class Program
         .AddEntityFrameworkStores<IARADbContext>()
         .AddDefaultTokenProviders();
 
-        // Add JWT Authentication
-        var jwtSection = builder.Configuration.GetSection("Jwt");
-        var key = Encoding.UTF8.GetBytes(jwtSection["Key"] ?? throw new InvalidOperationException("Jwt:Key not found"));
+        // Add JWT Authentication - use .env or appsettings
+        var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
+                     ?? builder.Configuration["Jwt:Key"] 
+                     ?? throw new InvalidOperationException("JWT secret key not found");
+        var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
+                        ?? builder.Configuration["Jwt:Issuer"];
+        var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
+                          ?? builder.Configuration["Jwt:Audience"];
+        
+        var key = Encoding.UTF8.GetBytes(jwtKey);
         
         builder.Services.AddAuthentication(options =>
         {
@@ -63,8 +76,8 @@ public class Program
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtSection["Issuer"],
-                ValidAudience = jwtSection["Audience"],
+                ValidIssuer = jwtIssuer,
+                ValidAudience = jwtAudience,
                 IssuerSigningKey = new SymmetricSecurityKey(key)
             };
         });

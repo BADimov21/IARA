@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.FishingModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class FishingTripController : Controller
 {
     private readonly IFishingTripService _fishingTripService;
@@ -27,7 +28,6 @@ public class FishingTripController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<FishingTripFilter> filters)
     {
         return Ok(_fishingTripService.GetAll(filters));
@@ -46,12 +46,14 @@ public class FishingTripController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Complete([FromBody] FishingTripCompleteRequestDTO trip)
     {
         return Ok(_fishingTripService.Complete(trip));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_fishingTripService.Delete(id));

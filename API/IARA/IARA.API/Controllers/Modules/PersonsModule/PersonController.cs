@@ -17,6 +17,7 @@ namespace IARA.API.Controllers.Modules.PersonsModule;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class PersonController : Controller
 {
     private readonly IPersonService _personService;
@@ -27,7 +28,6 @@ public class PersonController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     public IActionResult GetAll([FromBody] BaseFilter<PersonFilter> filters)
     {
         return Ok(_personService.GetAll(filters));
@@ -46,12 +46,14 @@ public class PersonController : Controller
     }
 
     [HttpPatch]
+    [Authorize(Roles = "Admin")]
     public IActionResult Edit([FromBody] PersonUpdateRequestDTO person)
     {
         return Ok(_personService.Edit(person));
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_personService.Delete(id));
