@@ -1,0 +1,1 @@
+export { LandingList } from './LandingList';

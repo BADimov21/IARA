@@ -24,10 +24,14 @@ export interface AuthenticationResponseDTO {
 }
 
 export interface UserResponseDTO {
-  id: string;
+  userId: string;
   username: string;
   email: string;
+  userType: string;
   personId?: number;
+  isActive: boolean;
+  createdDate: string;
+  lastLoginDate?: string;
 }
 
 // Filters

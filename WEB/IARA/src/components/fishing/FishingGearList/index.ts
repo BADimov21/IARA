@@ -1,0 +1,1 @@
+export { FishingGearList } from './FishingGearList';

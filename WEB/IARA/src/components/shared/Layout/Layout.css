@@ -8,6 +8,15 @@
   background-attachment: fixed;
 }
 
+/* Layout Body - Fixed Height for Scrolling */
+.layout-body {
+  display: flex;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
 /* Header Styles */
 .layout-header {
   display: flex;
@@ -99,6 +108,42 @@
 @media (max-width: 480px) {
   .layout-header-actions {
     gap: 0.5rem;
+  }
+}
+
+.layout-profile-button {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  border: none;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.layout-profile-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+  background: linear-gradient(135deg, #0284c7 0%, #0c4a6e 100%);
+}
+
+@media (max-width: 768px) {
+  .layout-profile-button {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .layout-profile-button {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
   }
 }
 
@@ -282,6 +327,8 @@
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100vh - 4rem);
   max-width: 100%;
 }
 

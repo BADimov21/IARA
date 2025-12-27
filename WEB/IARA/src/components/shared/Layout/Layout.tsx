@@ -6,6 +6,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../shared/api';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { Footer } from '../Footer';
 import './Layout.css';
 
 interface LayoutProps {
@@ -54,7 +56,7 @@ const navigationItems: NavItem[] = [
     label: 'Inspections',
     path: '/inspections',
     children: [
-      { label: 'Inspections', path: '/inspections/list' },
+      { label: 'Inspections', path: '/inspections' },
       { label: 'Inspectors', path: '/inspections/inspectors' },
       { label: 'Violations', path: '/inspections/violations' },
     ],
@@ -72,7 +74,7 @@ const navigationItems: NavItem[] = [
     label: 'Recreational Fishing',
     path: '/recreational',
     children: [
-      { label: 'Ticket Purchases', path: '/recreational/ticket-purchases' },
+      { label: 'Ticket Purchases', path: '/recreational/tickets' },
       { label: 'Catches', path: '/recreational/catches' },
     ],
   },
@@ -84,6 +86,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [openSubmenus, setOpenSubmenus] = useState<string[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
+  const { role } = useAuth();
+
+  // Filter navigation items based on user role
+  const filteredNavItems = navigationItems.filter(item => {
+    // Hide Users page from non-admin users
+    if (item.path === '/users' && role !== 'Admin') {
+      return false;
+    }
+    return true;
+  });
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -112,9 +124,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           ☰
         </button>
         <div className="layout-header-title">
-          <h1>IARA - Fisheries Information System</h1>
+          <h1>Executive Agency for Fisheries and Aquaculture</h1>
         </div>
         <div className="layout-header-actions">
+          <button 
+            className="layout-profile-button" 
+            onClick={() => navigate('/profile')}
+            title="My Profile"
+          >
+            👤 My Profile
+          </button>
           <button className="layout-logout-button" onClick={handleLogout}>
             Logout
           </button>
@@ -131,7 +150,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Sidebar Navigation */}
         <aside className={`layout-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
           <nav className="layout-nav">
-            {navigationItems.map((item) => (
+            {filteredNavItems.map((item) => (
               <div key={item.path} className="nav-item-container">
                 {item.children ? (
                   <>
@@ -176,6 +195,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Main Content Area */}
         <main className="layout-content">{children}</main>
       </div>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

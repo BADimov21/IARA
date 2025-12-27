@@ -12,7 +12,7 @@ import './LoginForm.css';
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+  const [submitError] = useState(''); // Reserved for future use
   const [formData, setFormData] = useState({
     username: '',
     password: '',

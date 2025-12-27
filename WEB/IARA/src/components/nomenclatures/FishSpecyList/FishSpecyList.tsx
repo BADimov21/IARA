@@ -1,42 +1,42 @@
 /**
  * FishSpecyList Component
- * Displays list of fish species
+ * Displays list of fish species with role-based access
  */
 
 import React, { useState, useEffect } from 'react';
 import { fishSpecyApi } from '../../../shared/api';
-import { Table, Button, Card, Loading, Modal } from '../../shared';
-import { useToast } from '../../shared/Toast';
-import { FishSpecyForm } from '../FishSpecyForm';
+import { Table, Button, Card, Loading, Modal, Input } from '../../shared';
+import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
 import type { Column } from '../../shared/Table/Table';
+import type { FishSpecyFilter, BaseFilter } from '../../../shared/types';
 
-interface FishSpecy {
+interface FishSpecyItem {
   id: number;
   speciesName: string;
-  latinName?: string;
-  code?: string;
 }
 
 export const FishSpecyList: React.FC = () => {
-  const toast = useToast();
-  const [fishSpecies, setFishSpecies] = useState<FishSpecy[]>([]);
+  const { role } = useAuth();
+  const [fishSpecies, setFishSpecies] = useState<FishSpecyItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
-  const [total, setTotal] = useState(0);
   const [showModal, setShowModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<FishSpecy | null>(null);
+  const [editingItem, setEditingItem] = useState<FishSpecyItem | null>(null);
+  const [formData, setFormData] = useState({ speciesName: '' });
 
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const response = await fishSpecyApi.getAll({ page, pageSize });
+      const filters: BaseFilter<FishSpecyFilter> = {
+        page: 1,
+        pageSize: 100,
+        filters: {},
+      };
+      const response = await fishSpecyApi.getAll(filters);
       if (response && Array.isArray(response)) {
         setFishSpecies(response);
-        setTotal(response.length);
       }
     } catch (error: any) {
-      toast.error(error?.message || 'Failed to load fish species');
+      console.error('Failed to load fish species:', error);
     } finally {
       setIsLoading(false);
     }
@@ -46,71 +46,68 @@ export const FishSpecyList: React.FC = () => {
     loadData();
   }, []);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this fish species?')) {
-      return;
-    }
+  const handleAdd = () => {
+    if (!canEdit(role)) return;
+    setEditingItem(null);
+    setFormData({ speciesName: '' });
+    setShowModal(true);
+  };
+
+  const handleEdit = (item: FishSpecyItem) => {
+    if (!canEdit(role)) return;
+    setEditingItem(item);
+    setFormData({ speciesName: item.speciesName });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!canDelete(role)) return;
+    if (!confirm('Are you sure you want to delete this fish species?')) return;
 
     try {
-      await fishSpecyApi.delete(id);
-      toast.success('Fish species deleted successfully');
-      loadData();
+      await fishSpecyApi.delete(Number(id));
+      await loadData();
     } catch (error: any) {
-      toast.error(error?.message || 'Failed to delete fish species');
+      console.error('Failed to delete fish species:', error);
     }
   };
 
-  const handleEdit = (item: FishSpecy) => {
-    setEditingItem(item);
-    setShowModal(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canEdit(role)) return;
+
+    try {
+      if (editingItem) {
+        await fishSpecyApi.edit({ id: editingItem.id, speciesName: formData.speciesName });
+      } else {
+        await fishSpecyApi.add({ speciesName: formData.speciesName });
+      }
+      setShowModal(false);
+      await loadData();
+    } catch (error: any) {
+      console.error('Failed to save fish species:', error);
+    }
   };
 
-  const handleAdd = () => {
-    setEditingItem(null);
-    setShowModal(true);
-  };
-
-  const handleSaveSuccess = () => {
-    setShowModal(false);
-    setEditingItem(null);
-    loadData();
-  };
-
-  const columns: Column<FishSpecy>[] = [
-    {
-      key: 'id',
-      header: 'ID',
-      width: '80px',
-    },
-    {
-      key: 'speciesName',
-      header: 'Species Name',
-      sortable: true,
-    },
-    {
-      key: 'latinName',
-      header: 'Latin Name',
-      sortable: true,
-      render: (item) => item.latinName || '-',
-    },
-    {
-      key: 'code',
-      header: 'Code',
-      width: '100px',
-      render: (item) => item.code || '-',
-    },
+  const columns: Column<FishSpecyItem>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
+    { key: 'speciesName', header: 'Species Name', sortable: true },
     {
       key: 'actions',
       header: 'Actions',
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Button size="small" variant="primary" onClick={() => handleEdit(item)}>
-            Edit
-          </Button>
-          <Button size="small" variant="danger" onClick={() => handleDelete(item.id)}>
-            Delete
-          </Button>
+          {canEdit(role) && (
+            <Button size="small" variant="primary" onClick={() => handleEdit(item)}>
+              Edit
+            </Button>
+          )}
+          {canDelete(role) && (
+            <Button size="small" variant="danger" onClick={() => handleDelete(item.id.toString())}>
+              Delete
+            </Button>
+          )}
         </div>
       ),
     },
@@ -122,20 +119,18 @@ export const FishSpecyList: React.FC = () => {
 
   return (
     <div>
+      {!canEdit(role) && (
+        <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
+          You have view-only access to this page.
+        </div>
+      )}
+
       <Card
         title="Fish Species"
         subtitle="Manage fish species nomenclature"
-        actions={<Button variant="primary" onClick={handleAdd}>Add Fish Species</Button>}
+        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>Add Fish Species</Button> : undefined}
       >
-        <Table
-          columns={columns}
-          data={fishSpecies.slice((page - 1) * pageSize, page * pageSize)}
-          page={page}
-          pageSize={pageSize}
-          total={total}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-        />
+        <Table columns={columns} data={fishSpecies} />
       </Card>
 
       {showModal && (
@@ -145,11 +140,23 @@ export const FishSpecyList: React.FC = () => {
           onClose={() => setShowModal(false)}
           size="medium"
         >
-          <FishSpecyForm
-            initialData={editingItem || undefined}
-            onSuccess={handleSaveSuccess}
-            onCancel={() => setShowModal(false)}
-          />
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <Input
+              label="Species Name"
+              value={formData.speciesName}
+              onChange={(e) => setFormData({ ...formData, speciesName: e.target.value })}
+              required
+              fullWidth
+            />
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                {editingItem ? 'Update' : 'Create'}
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>

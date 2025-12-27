@@ -46,3 +46,17 @@ export interface VesselFilter {
   minEnginePower?: number;
   maxEnginePower?: number;
 }
+
+export interface VesselResponseDTO {
+  id: number;
+  internationalNumber: string;
+  callSign: string;
+  vesselName: string;
+  length: number;
+  width: number;
+  grossTonnage: number;
+  enginePower: number;
+  engineTypeId: number;
+  ownerId: number;
+  captainId: number;
+}

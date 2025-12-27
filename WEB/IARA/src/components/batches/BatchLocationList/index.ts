@@ -1,0 +1,1 @@
+export { BatchLocationList } from './BatchLocationList';

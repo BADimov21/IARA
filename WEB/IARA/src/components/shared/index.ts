@@ -14,3 +14,5 @@ export { TextArea } from './TextArea';
 export { Checkbox } from './Checkbox';
 export { Loading } from './Loading';
 export { ToastProvider, useToast } from './Toast';
+export { AdminRoute } from './AdminRoute';
+export { Footer } from './Footer';

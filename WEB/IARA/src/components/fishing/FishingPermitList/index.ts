@@ -1,0 +1,1 @@
+export { FishingPermitList } from './FishingPermitList';

@@ -6,12 +6,21 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './components/shared/Toast';
-import { Layout } from './components/shared/Layout';
+import { Layout, AdminRoute } from './components/shared';
 import { Button } from './components/shared';
 import { LoginForm, RegisterForm } from './components/auth';
 import { UserList } from './components/users';
-import { FishSpecyList } from './components/nomenclatures';
-import { FishingTripList } from './components/fishing';
+import { ProfilePage } from './components/profile';
+import { FishSpecyList, EngineTypeList, FishingGearTypeList, TicketTypeList } from './components/nomenclatures';
+import { FishingTripList, CatchList, FishingGearList, FishingOperationList, FishingPermitList } from './components/fishing';
+import { VesselList } from './components/registry/VesselList';
+import { PersonList } from './components/registry/PersonList';
+import { TELKDecisionList } from './components/registry/TELKDecisionList';
+import { InspectionList } from './components/inspections/InspectionList';
+import { InspectorList } from './components/inspections/InspectorList';
+import { ViolationList } from './components/inspections/ViolationList';
+import { FishBatchList, LandingList, BatchLocationList } from './components/batches';
+import { RecreationalCatchList, TicketPurchaseList } from './components/recreational';
 import './App.css';
 
 // Protected Route Component
@@ -31,28 +40,72 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
 // Dashboard Component
 const Dashboard: React.FC = () => {
+  const [stats, setStats] = React.useState({
+    fishSpecies: 0,
+    fishingTrips: 0,
+    inspections: 0,
+    vessels: 0,
+  });
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setLoading(true);
+        // Import the API services from shared/api
+        const { fishSpecyApi, fishingTripApi, inspectionApi, vesselApi } = await import('./shared/api');
+
+        // Fetch data from APIs
+        const [species, trips, inspections, vessels] = await Promise.all([
+          fishSpecyApi.getAll({ page: 1, pageSize: 100, filters: {} }).catch(() => []),
+          fishingTripApi.getAll({ page: 1, pageSize: 100, filters: {} }).catch(() => []),
+          inspectionApi.getAll({ page: 1, pageSize: 100, filters: {} }).catch(() => []),
+          vesselApi.getAll({ page: 1, pageSize: 100, filters: {} }).catch(() => []),
+        ]);
+
+        setStats({
+          fishSpecies: Array.isArray(species) ? species.length : 0,
+          fishingTrips: Array.isArray(trips) ? trips.length : 0,
+          inspections: Array.isArray(inspections) ? inspections.length : 0,
+          vessels: Array.isArray(vessels) ? vessels.length : 0,
+        });
+      } catch (error) {
+        console.error('Failed to load dashboard stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStats();
+  }, []);
+
   return (
     <div className="dashboard">
-      <h1>IARA Dashboard</h1>
+      <h1>Executive Agency for Fisheries and Aquaculture</h1>
+      <h2>EAFA (IARA) Dashboard</h2>
       <p>Welcome to the Fisheries Information System</p>
-      <div className="dashboard-stats">
-        <div className="stat-card">
-          <h3>Fish Species</h3>
-          <p className="stat-number">42</p>
+      {loading ? (
+        <p>Loading statistics...</p>
+      ) : (
+        <div className="dashboard-stats">
+          <div className="stat-card">
+            <h3>Fish Species</h3>
+            <p className="stat-number">{stats.fishSpecies}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Fishing Trips</h3>
+            <p className="stat-number">{stats.fishingTrips}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Inspections</h3>
+            <p className="stat-number">{stats.inspections}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Vessels</h3>
+            <p className="stat-number">{stats.vessels}</p>
+          </div>
         </div>
-        <div className="stat-card">
-          <h3>Fishing Trips</h3>
-          <p className="stat-number">128</p>
-        </div>
-        <div className="stat-card">
-          <h3>Inspections</h3>
-          <p className="stat-number">37</p>
-        </div>
-        <div className="stat-card">
-          <h3>Active Users</h3>
-          <p className="stat-number">15</p>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -76,14 +129,43 @@ function App() {
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     
-                    {/* Users */}
-                    <Route path="/users" element={<UserList />} />
+                    {/* Profile */}
+                    <Route path="/profile" element={<ProfilePage />} />
+                    
+                    {/* Users - Admin Only */}
+                    <Route path="/users" element={<AdminRoute><UserList /></AdminRoute>} />
                     
                     {/* Nomenclatures */}
                     <Route path="/nomenclatures/fish-species" element={<FishSpecyList />} />
+                    <Route path="/nomenclatures/engine-types" element={<EngineTypeList />} />
+                    <Route path="/nomenclatures/fishing-gear-types" element={<FishingGearTypeList />} />
+                    <Route path="/nomenclatures/ticket-types" element={<TicketTypeList />} />
                     
                     {/* Fishing */}
                     <Route path="/fishing/trips" element={<FishingTripList />} />
+                    <Route path="/fishing/catches" element={<CatchList />} />
+                    <Route path="/fishing/gear" element={<FishingGearList />} />
+                    <Route path="/fishing/operations" element={<FishingOperationList />} />
+                    <Route path="/fishing/permits" element={<FishingPermitList />} />
+                    
+                    {/* Batches */}
+                    <Route path="/batches/fish-batches" element={<FishBatchList />} />
+                    <Route path="/batches/landings" element={<LandingList />} />
+                    <Route path="/batches/locations" element={<BatchLocationList />} />
+                    
+                    {/* Registry */}
+                    <Route path="/registry/persons" element={<PersonList />} />
+                    <Route path="/registry/vessels" element={<VesselList />} />
+                    <Route path="/registry/telk-decisions" element={<TELKDecisionList />} />
+                    
+                    {/* Inspections */}
+                    <Route path="/inspections" element={<InspectionList />} />
+                    <Route path="/inspections/inspectors" element={<InspectorList />} />
+                    <Route path="/inspections/violations" element={<ViolationList />} />
+                    
+                    {/* Recreational Fishing */}
+                    <Route path="/recreational/catches" element={<RecreationalCatchList />} />
+                    <Route path="/recreational/tickets" element={<TicketPurchaseList />} />
                     
                     {/* Catch-all */}
                     <Route path="*" element={

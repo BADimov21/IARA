@@ -42,6 +42,13 @@ export interface EngineTypeFilter {
   fuelUnit?: string;
 }
 
+export interface EngineTypeResponseDTO {
+  id: number;
+  typeName: string;
+  averageFuelConsumption: number;
+  fuelUnit: string;
+}
+
 // ==================== Fishing Gear Type ====================
 
 export interface FishingGearTypeCreateRequestDTO {
