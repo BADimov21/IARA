@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { fishingGearTypeApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { FishingGearTypeResponseDTO, FishingGearTypeFilter, BaseFilter } from '../../../shared/types';
 
 export const FishingGearTypeList: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [items, setItems] = useState<FishingGearTypeResponseDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,12 +49,23 @@ export const FishingGearTypeList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Fishing Gear Type',
+      message: 'Are you sure you want to delete this fishing gear type? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await fishingGearTypeApi.delete(id);
+      toast.success('Fishing gear type deleted successfully');
       await loadData();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete fishing gear type');
     }
   };
 
@@ -61,13 +75,16 @@ export const FishingGearTypeList: React.FC = () => {
     try {
       if (editingItem) {
         await fishingGearTypeApi.edit({ id: editingItem.id, ...formData });
+        toast.success('Fishing gear type updated successfully');
       } else {
         await fishingGearTypeApi.add(formData);
+        toast.success('Fishing gear type added successfully');
       }
       setIsModalOpen(false);
       await loadData();
     } catch (error) {
       console.error('Failed to save:', error);
+      toast.error('Failed to save fishing gear type');
     }
   };
 
@@ -118,6 +135,17 @@ export const FishingGearTypeList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

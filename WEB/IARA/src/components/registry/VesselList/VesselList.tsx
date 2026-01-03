@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { vesselApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { VesselResponseDTO, VesselFilter, BaseFilter } from '../../../shared/types';
 
 export const VesselList: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [vessels, setVessels] = useState<VesselResponseDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,12 +71,23 @@ export const VesselList: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Vessel',
+      message: 'Are you sure you want to delete this vessel? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await vesselApi.delete(id);
+      toast.success('Vessel deleted successfully');
       await loadVessels();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete vessel');
     }
   };
 
@@ -95,13 +109,16 @@ export const VesselList: React.FC = () => {
       };
       if (editingItem) {
         await vesselApi.edit({ id: editingItem.id, ...payload });
+        toast.success('Vessel updated successfully');
       } else {
         await vesselApi.add(payload);
+        toast.success('Vessel added successfully');
       }
       setIsModalOpen(false);
       await loadVessels();
     } catch (error) {
-      console.error('Failed to save:', error);
+      console.error('Failed to save vessel:', error);
+      toast.error('Failed to save vessel');
     }
   };
 
@@ -167,6 +184,17 @@ export const VesselList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ticketPurchaseApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { TicketPurchaseFilter, BaseFilter } from '../../../shared/types';
 
@@ -16,6 +17,8 @@ interface TicketPurchaseItem {
 
 export const TicketPurchaseList: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [purchases, setPurchases] = useState<TicketPurchaseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,12 +70,23 @@ export const TicketPurchaseList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Ticket Purchase',
+      message: 'Are you sure you want to delete this ticket purchase? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await ticketPurchaseApi.delete(Number(id));
+      toast.success('Ticket purchase deleted successfully');
       await loadPurchases();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete ticket purchase');
     }
   };
 
@@ -90,14 +104,17 @@ export const TicketPurchaseList: React.FC = () => {
       };
       if (editingItem) {
         console.log('Edit not supported - API only has add');
+        toast.warning('Edit not supported for ticket purchases');
         return;
       } else {
         await ticketPurchaseApi.add(payload);
+        toast.success('Ticket purchase added successfully');
       }
       setIsModalOpen(false);
       await loadPurchases();
     } catch (error) {
       console.error('Failed to save:', error);
+      toast.error('Failed to save ticket purchase');
     }
   };
 
@@ -156,6 +173,17 @@ export const TicketPurchaseList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

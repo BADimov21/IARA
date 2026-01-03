@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { personApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { PersonResponseDTO, PersonFilter, BaseFilter } from '../../../shared/types';
 
 export const PersonList: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [persons, setPersons] = useState<PersonResponseDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,12 +63,23 @@ export const PersonList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Person',
+      message: 'Are you sure you want to delete this person? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await personApi.delete(id);
+      toast.success('Person deleted successfully');
       await loadPersons();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete person');
     }
   };
 
@@ -75,13 +89,16 @@ export const PersonList: React.FC = () => {
     try {
       if (editingItem) {
         await personApi.edit({ id: editingItem.id, ...formData });
+        toast.success('Person updated successfully');
       } else {
         await personApi.add(formData);
+        toast.success('Person added successfully');
       }
       setIsModalOpen(false);
       await loadPersons();
     } catch (error) {
       console.error('Failed to save:', error);
+      toast.error('Failed to save person');
     }
   };
 
@@ -142,6 +159,17 @@ export const PersonList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

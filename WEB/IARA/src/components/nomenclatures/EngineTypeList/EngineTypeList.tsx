@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { engineTypeApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { EngineTypeResponseDTO, EngineTypeFilter, BaseFilter } from '../../../shared/types';
 
 export const EngineTypeList: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [items, setItems] = useState<EngineTypeResponseDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,12 +53,24 @@ export const EngineTypeList: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Engine Type',
+      message: 'Are you sure you want to delete this engine type? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await engineTypeApi.delete(id);
+      toast.success('Engine type deleted successfully');
       await loadData();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete engine type');
     }
   };
 
@@ -70,13 +85,16 @@ export const EngineTypeList: React.FC = () => {
       };
       if (editingItem) {
         await engineTypeApi.edit({ id: editingItem.id, ...payload });
+        toast.success('Engine type updated successfully');
       } else {
         await engineTypeApi.add(payload);
+        toast.success('Engine type added successfully');
       }
       setIsModalOpen(false);
       await loadData();
     } catch (error) {
       console.error('Failed to save:', error);
+      toast.error('Failed to save engine type');
     }
   };
 
@@ -127,6 +145,17 @@ export const EngineTypeList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

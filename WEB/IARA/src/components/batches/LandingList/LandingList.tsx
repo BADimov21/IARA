@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { landingApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { LandingFilter, BaseFilter } from '../../../shared/types';
 
@@ -15,6 +16,8 @@ interface LandingItem {
 
 export const LandingList: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [landings, setLandings] = useState<LandingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -64,12 +67,23 @@ export const LandingList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Landing',
+      message: 'Are you sure you want to delete this landing? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await landingApi.delete(Number(id));
+      toast.success('Landing deleted successfully');
       await loadLandings();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete landing');
     }
   };
 
@@ -85,13 +99,16 @@ export const LandingList: React.FC = () => {
       };
       if (editingItem) {
         await landingApi.edit({ id: editingItem.id, ...payload });
+        toast.success('Landing updated successfully');
       } else {
         await landingApi.add(payload);
+        toast.success('Landing added successfully');
       }
       setIsModalOpen(false);
       await loadLandings();
     } catch (error) {
       console.error('Failed to save:', error);
+      toast.error('Failed to save landing');
     }
   };
 
@@ -145,6 +162,17 @@ export const LandingList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

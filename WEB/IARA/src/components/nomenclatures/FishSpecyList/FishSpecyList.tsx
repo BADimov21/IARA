@@ -5,8 +5,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { fishSpecyApi } from '../../../shared/api';
-import { Table, Button, Card, Loading, Modal, Input } from '../../shared';
+import { Table, Button, Card, Loading, Modal, Input, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { FishSpecyFilter, BaseFilter } from '../../../shared/types';
 
@@ -17,6 +18,8 @@ interface FishSpecyItem {
 
 export const FishSpecyList: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [fishSpecies, setFishSpecies] = useState<FishSpecyItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -62,13 +65,24 @@ export const FishSpecyList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure you want to delete this fish species?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Fish Species',
+      message: 'Are you sure you want to delete this fish species? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
 
     try {
       await fishSpecyApi.delete(Number(id));
+      toast.success('Fish species deleted successfully');
       await loadData();
     } catch (error: any) {
       console.error('Failed to delete fish species:', error);
+      toast.error('Failed to delete fish species');
     }
   };
 
@@ -77,15 +91,30 @@ export const FishSpecyList: React.FC = () => {
     if (!canEdit(role)) return;
 
     try {
+      console.log('Submitting fish species:', editingItem ? 'EDIT' : 'ADD');
+      console.log('Form data:', formData);
+      console.log('Editing item:', editingItem);
+      
       if (editingItem) {
-        await fishSpecyApi.edit({ id: editingItem.id, speciesName: formData.speciesName });
+        const payload = { id: editingItem.id, speciesName: formData.speciesName };
+        console.log('Edit payload:', payload);
+        await fishSpecyApi.edit(payload);
+        console.log('Edit successful');
+        toast.success('Fish species updated successfully');
       } else {
-        await fishSpecyApi.add({ speciesName: formData.speciesName });
+        const payload = { speciesName: formData.speciesName };
+        console.log('Add payload:', payload);
+        await fishSpecyApi.add(payload);
+        console.log('Add successful');
+        toast.success('Fish species added successfully');
       }
       setShowModal(false);
       await loadData();
     } catch (error: any) {
-      console.error('Failed to save fish species:', error);
+      console.error('Failed to save fish species - Full error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      const errorMsg = error.message || error.statusCode || 'Unknown error';
+      toast.error(`Failed to save: ${errorMsg}`);
     }
   };
 
@@ -159,6 +188,17 @@ export const FishSpecyList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

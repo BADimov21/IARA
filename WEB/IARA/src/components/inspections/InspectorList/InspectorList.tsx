@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { inspectorApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { InspectorFilter, BaseFilter } from '../../../shared/types';
 
@@ -15,8 +16,8 @@ interface InspectorItem {
 }
 
 export const InspectorList: React.FC = () => {
-  const { role } = useAuth();
-  const [inspectors, setInspectors] = useState<InspectorItem[]>([]);
+  const { role } = useAuth();  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();  const [inspectors, setInspectors] = useState<InspectorItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InspectorItem | null>(null);
@@ -65,12 +66,23 @@ export const InspectorList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Inspector',
+      message: 'Are you sure you want to delete this inspector? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await inspectorApi.delete(Number(id));
+      toast.success('Inspector deleted successfully');
       await loadInspectors();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete inspector');
     }
   };
 
@@ -80,15 +92,18 @@ export const InspectorList: React.FC = () => {
     try {
       if (editingItem) {
         await inspectorApi.edit({ id: editingItem.id, ...formData });
+        toast.success('Inspector updated successfully');
       } else {
         // API requires personId which we don't have in form - need to add
         const payload = { ...formData, personId: 1 }; // Placeholder
         await inspectorApi.add(payload);
+        toast.success('Inspector added successfully');
       }
       setIsModalOpen(false);
       await loadInspectors();
     } catch (error) {
       console.error('Failed to save:', error);
+      toast.error('Failed to save inspector');
     }
   };
 
@@ -145,6 +160,17 @@ export const InspectorList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

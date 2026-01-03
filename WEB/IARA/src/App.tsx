@@ -11,6 +11,7 @@ import { Button } from './components/shared';
 import { LoginForm, RegisterForm } from './components/auth';
 import { UserList } from './components/users';
 import { ProfilePage } from './components/profile';
+import { Unauthorized } from './pages/Unauthorized';
 import { FishSpecyList, EngineTypeList, FishingGearTypeList, TicketTypeList } from './components/nomenclatures';
 import { FishingTripList, CatchList, FishingGearList, FishingOperationList, FishingPermitList } from './components/fishing';
 import { VesselList } from './components/registry/VesselList';
@@ -131,6 +132,9 @@ function App() {
                     
                     {/* Profile */}
                     <Route path="/profile" element={<ProfilePage />} />
+                    
+                    {/* Unauthorized */}
+                    <Route path="/unauthorized" element={<Unauthorized />} />
                     
                     {/* Users - Admin Only */}
                     <Route path="/users" element={<AdminRoute><UserList /></AdminRoute>} />

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { fishingOperationApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { FishingOperationFilter, BaseFilter } from '../../../shared/types';
 
@@ -16,6 +17,8 @@ interface FishingOperationItem {
 
 export const FishingOperationList: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [operations, setOperations] = useState<FishingOperationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,12 +70,23 @@ export const FishingOperationList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Fishing Operation',
+      message: 'Are you sure you want to delete this fishing operation? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await fishingOperationApi.delete(Number(id));
+      toast.success('Fishing operation deleted successfully');
       await loadOperations();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete fishing operation');
     }
   };
 
@@ -90,13 +104,16 @@ export const FishingOperationList: React.FC = () => {
       };
       if (editingItem) {
         console.log('Edit not supported - only add and complete operations');
+        toast.warning('Edit not supported for fishing operations');
       } else {
         await fishingOperationApi.add(payload);
+        toast.success('Fishing operation added successfully');
       }
       setIsModalOpen(false);
       await loadOperations();
     } catch (error) {
       console.error('Failed to save:', error);
+      toast.error('Failed to save fishing operation');
     }
   };
 
@@ -152,6 +169,17 @@ export const FishingOperationList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

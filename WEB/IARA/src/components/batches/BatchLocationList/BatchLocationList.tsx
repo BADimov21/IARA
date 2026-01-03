@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { batchLocationApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { BatchLocationFilter, BaseFilter } from '../../../shared/types';
 
@@ -14,6 +15,8 @@ interface BatchLocationItem {
 
 export const BatchLocationList: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [locations, setLocations] = useState<BatchLocationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,12 +64,23 @@ export const BatchLocationList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Batch Location',
+      message: 'Are you sure you want to delete this batch location? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await batchLocationApi.delete(Number(id));
+      toast.success('Batch location deleted successfully');
       await loadLocations();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete batch location');
     }
   };
 
@@ -77,15 +91,18 @@ export const BatchLocationList: React.FC = () => {
       // Note: API doesn't have edit method, only add
       if (editingItem) {
         console.log('Edit not supported for batch locations');
+        toast.warning('Edit not supported for batch locations');
         return;
       } else {
         // API requires different structure - skipping for now
         console.log('Add requires batchId, locationType, arrivedAt');
+        toast.warning('Add functionality requires additional fields');
       }
       setIsModalOpen(false);
       await loadLocations();
     } catch (error) {
       console.error('Failed to save:', error);
+      toast.error('Failed to save batch location');
     }
   };
 
@@ -136,6 +153,17 @@ export const BatchLocationList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../shared/api';
-import { useAuth } from '../../../shared/hooks/useAuth';
+import { useAuth, isAdmin } from '../../../shared/hooks/useAuth';
 import { Footer } from '../Footer';
 import './Layout.css';
 
@@ -88,11 +88,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const { role } = useAuth();
 
+  // Debug role for Users menu visibility
+  console.log('=== LAYOUT USERS MENU DEBUG ===');
+  console.log('Current role:', role);
+  console.log('Role type:', typeof role);
+  console.log('isAdmin(role):', isAdmin(role));
+  console.log('role === "Admin":', role === 'Admin');
+  console.log('=== END USERS MENU DEBUG ===');
+
   // Filter navigation items based on user role
   const filteredNavItems = navigationItems.filter(item => {
-    // Hide Users page from non-admin users
-    if (item.path === '/users' && role !== 'Admin') {
-      return false;
+    // Show Users page only to admin users
+    if (item.path === '/users') {
+      return isAdmin(role);
     }
     return true;
   });

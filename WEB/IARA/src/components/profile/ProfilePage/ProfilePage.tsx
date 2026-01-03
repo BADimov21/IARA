@@ -134,8 +134,19 @@ export const ProfilePage: React.FC = () => {
         setError(`User profile not found. JWT userId: "${userId}", username: "${username}". Check browser console for details.`);
       }
     } catch (err) {
-      console.error('Failed to load profile:', err);
-      setError(`Failed to load profile: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('Failed to load profile - Full error:', err);
+      console.error('Error details:', JSON.stringify(err, null, 2));
+      
+      let errorMessage = 'Failed to load profile';
+      if (err && typeof err === 'object') {
+        if ('message' in err) {
+          errorMessage += `: ${(err as any).message}`;
+        } else if ('statusCode' in err) {
+          errorMessage += `: Status ${(err as any).statusCode}`;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { recreationalCatchApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { RecreationalCatchFilter, BaseFilter } from '../../../shared/types';
 
@@ -16,6 +17,8 @@ interface RecreationalCatchItem {
 
 export const RecreationalCatchList: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [catches, setCatches] = useState<RecreationalCatchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,12 +68,23 @@ export const RecreationalCatchList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Recreational Catch',
+      message: 'Are you sure you want to delete this catch record? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await recreationalCatchApi.delete(Number(id));
+      toast.success('Catch deleted successfully');
       await loadCatches();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete catch');
     }
   };
 
@@ -88,14 +102,17 @@ export const RecreationalCatchList: React.FC = () => {
       };
       if (editingItem) {
         console.log('Edit not supported - API only has add');
+        toast.warning('Edit not supported for recreational catches');
         return;
       } else {
         await recreationalCatchApi.add(payload);
+        toast.success('Catch added successfully');
       }
       setIsModalOpen(false);
       await loadCatches();
     } catch (error) {
       console.error('Failed to save:', error);
+      toast.error('Failed to save catch');
     }
   };
 
@@ -149,6 +166,17 @@ export const RecreationalCatchList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { userApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, isAdmin } from '../../../shared/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { UserResponseDTO, UserFilter, BaseFilter } from '../../../shared/types';
 
 export const UserList: React.FC = () => {
   const { role } = useAuth();
-  
-  // Redirect non-admin users
-  if (!isAdmin(role)) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
 
   const [users, setUsers] = useState<UserResponseDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,12 +57,22 @@ export const UserList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure?')) return;
+    const confirmed = await confirm({
+      title: 'Delete User',
+      message: 'Are you sure you want to delete this user? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await userApi.delete(id);
+      toast.success('User deleted successfully');
       await loadUsers();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete user');
     }
   };
 
@@ -74,11 +81,12 @@ export const UserList: React.FC = () => {
     try {
       // TODO: Implement when API endpoints are available
       console.log('User save would be submitted:', formData);
-      alert('User management API not yet implemented');
+      toast.warning('User management API not yet implemented');
       setIsModalOpen(false);
       await loadUsers();
     } catch (error) {
       console.error('Failed to save:', error);
+      toast.error('Failed to save user');
     }
   };
 
@@ -150,6 +158,17 @@ export const UserList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

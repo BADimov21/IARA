@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { fishBatchApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
 import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { FishBatchFilter, BaseFilter } from '../../../shared/types';
 
@@ -16,6 +17,8 @@ interface FishBatchItem {
 
 export const FishBatchList: React.FC = () => {
   const { role } = useAuth();
+  const toast = useToast();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [batches, setBatches] = useState<FishBatchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,12 +68,23 @@ export const FishBatchList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!canDelete(role)) return;
-    if (!confirm('Are you sure?')) return;
+    
+    const confirmed = await confirm({
+      title: 'Delete Fish Batch',
+      message: 'Are you sure you want to delete this fish batch? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    
+    if (!confirmed) return;
+
     try {
       await fishBatchApi.delete(Number(id));
+      toast.success('Fish batch deleted successfully');
       await loadBatches();
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('Failed to delete fish batch');
     }
   };
 
@@ -87,13 +101,16 @@ export const FishBatchList: React.FC = () => {
       };
       if (editingItem) {
         await fishBatchApi.edit({ id: editingItem.id, ...payload });
+        toast.success('Fish batch updated successfully');
       } else {
         await fishBatchApi.add(payload);
+        toast.success('Fish batch added successfully');
       }
       setIsModalOpen(false);
       await loadBatches();
     } catch (error) {
       console.error('Failed to save:', error);
+      toast.error('Failed to save fish batch');
     }
   };
 
@@ -148,6 +165,17 @@ export const FishBatchList: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title || 'Confirm'}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };
