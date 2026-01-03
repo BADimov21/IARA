@@ -49,9 +49,11 @@ public class TicketPurchaseService : BaseService, ITicketPurchaseService
     {
         var ticketPurchase = new TicketPurchase
         {
+            TicketNumber = GenerateTicketNumber(),
             PersonId = dto.PersonId,
             TicketTypeId = dto.TicketTypeId,
             PurchaseDate = dto.PurchaseDate,
+            ValidFrom = dto.ValidFrom,
             ValidUntil = dto.ValidUntil,
             PricePaid = dto.PricePaid,
             TELKDecisionId = dto.TELKDecisionId
@@ -61,6 +63,16 @@ public class TicketPurchaseService : BaseService, ITicketPurchaseService
         Db.SaveChanges();
 
         return ticketPurchase.Id;
+    }
+    
+    private string GenerateTicketNumber()
+    {
+        var lastTicket = Db.TicketPurchases
+            .OrderByDescending(tp => tp.Id)
+            .FirstOrDefault();
+            
+        int nextNumber = (lastTicket?.Id ?? 0) + 1;
+        return $"TKT{DateTime.Now.Year}{nextNumber:D6}";
     }
 
     public bool Delete(int id)
@@ -84,6 +96,7 @@ public class TicketPurchaseService : BaseService, ITicketPurchaseService
                     Id = purchase.Id,
                     TicketNumber = purchase.TicketNumber,
                     PurchaseDate = purchase.PurchaseDate,
+                    ValidFrom = purchase.ValidFrom,
                     ValidUntil = purchase.ValidUntil,
                     PricePaid = purchase.PricePaid,
                     PersonId = purchase.PersonId,

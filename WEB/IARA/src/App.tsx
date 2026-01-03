@@ -6,12 +6,14 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './components/shared/Toast';
-import { Layout, AdminRoute } from './components/shared';
+import { Layout, AdminRoute, PersonalInfoGuard } from './components/shared';
 import { Button } from './components/shared';
-import { LoginForm, RegisterForm } from './components/auth';
+import { LoginForm, RegisterForm, PersonalInfoForm } from './components/auth';
 import { UserList } from './components/users';
 import { ProfilePage } from './components/profile';
+import { HelpPage } from './components/help/HelpPage';
 import { Unauthorized } from './pages/Unauthorized';
+import { UserDashboard } from './components/dashboard';
 import { FishSpecyList, EngineTypeList, FishingGearTypeList, TicketTypeList } from './components/nomenclatures';
 import { FishingTripList, CatchList, FishingGearList, FishingOperationList, FishingPermitList } from './components/fishing';
 import { VesselList } from './components/registry/VesselList';
@@ -22,6 +24,8 @@ import { InspectorList } from './components/inspections/InspectorList';
 import { ViolationList } from './components/inspections/ViolationList';
 import { FishBatchList, LandingList, BatchLocationList } from './components/batches';
 import { RecreationalCatchList, TicketPurchaseList } from './components/recreational';
+import { useAuth } from './shared/hooks/useAuth';
+import { isAdmin } from './shared/utils/permissions';
 import logo from './assets/logo.png';
 import './App.css';
 
@@ -40,8 +44,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   return <>{children}</>;
 };
 
-// Dashboard Component
-const Dashboard: React.FC = () => {
+// Admin Dashboard Component
+const AdminDashboard: React.FC = () => {
   const [stats, setStats] = React.useState({
     fishSpecies: 0,
     fishingTrips: 0,
@@ -85,7 +89,7 @@ const Dashboard: React.FC = () => {
     <div className="dashboard">
       <img src={logo} alt="IARA Logo" className="dashboard-logo" />
       <h1>Executive Agency for Fisheries and Aquaculture</h1>
-      <h2>EAFA (IARA) Dashboard</h2>
+      <h2>EAFA (IARA) Admin Dashboard</h2>
       <p>Welcome to the Fisheries Information System</p>
       {loading ? (
         <p>Loading statistics...</p>
@@ -113,6 +117,18 @@ const Dashboard: React.FC = () => {
   );
 };
 
+// Dashboard Router Component
+const Dashboard: React.FC = () => {
+  const { role } = useAuth();
+  
+  // Show different dashboard based on role
+  if (isAdmin(role)) {
+    return <AdminDashboard />;
+  }
+  
+  return <UserDashboard />;
+};
+
 function App() {
   return (
     <ToastProvider>
@@ -122,15 +138,24 @@ function App() {
           <Route path="/login" element={<LoginForm />} />
           <Route path="/register" element={<RegisterForm />} />
           
+          {/* Personal Info Form - Protected but outside Layout */}
+          <Route path="/personal-info" element={
+            <ProtectedRoute>
+              <PersonalInfoForm />
+            </ProtectedRoute>
+          } />
+          
           {/* Protected Routes */}
           <Route
             path="/*"
             element={
               <ProtectedRoute>
-                <Layout>
-                  <Routes>
+                <PersonalInfoGuard>
+                  <Layout>
+                    <Routes>
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/help" element={<HelpPage />} />
                     
                     {/* Profile */}
                     <Route path="/profile" element={<ProfilePage />} />
@@ -186,6 +211,7 @@ function App() {
                     } />
                   </Routes>
                 </Layout>
+                </PersonalInfoGuard>
               </ProtectedRoute>
             }
           />

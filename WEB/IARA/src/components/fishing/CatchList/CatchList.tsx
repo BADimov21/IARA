@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { catchApi } from '../../../shared/api';
 import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
-import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { CatchFilter, BaseFilter } from '../../../shared/types';
@@ -47,14 +48,14 @@ export const CatchList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (!canEdit(role)) return;
+    if (!canCreate(role, 'catches')) return;
     setEditingItem(null);
     setFormData({ fishingTripId: '', fishSpecyId: '', quantity: '', weight: '' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: CatchItem) => {
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'catches')) return;
     setEditingItem(item);
     setFormData({
       fishingTripId: item.fishingTripId?.toString() || '',
@@ -66,7 +67,7 @@ export const CatchList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!canDelete(role)) return;
+    if (!canDelete(role, 'catches')) return;
     
     const confirmed = await confirm({
       title: 'Delete Catch',
@@ -89,7 +90,7 @@ export const CatchList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'catches')) return;
     try {
       const payload = {
         operationId: 1,
@@ -123,8 +124,8 @@ export const CatchList: React.FC = () => {
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canEdit(role) && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
-          {canDelete(role) && <Button size="small" variant="danger" onClick={() => handleDelete(item.id.toString())}>Delete</Button>}
+          {canEdit(role, 'catches') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
+          {canDelete(role, 'catches') && <Button size="small" variant="danger" onClick={() => handleDelete(item.id.toString())}>Delete</Button>}
         </div>
       ),
     },
@@ -134,7 +135,7 @@ export const CatchList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role) && (
+      {!canEdit(role, 'catches') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.
         </div>
@@ -142,7 +143,7 @@ export const CatchList: React.FC = () => {
       <Card
         title="Catches"
         subtitle="Manage catch records"
-        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>+ Add Catch</Button> : undefined}
+        actions={canCreate(role, 'catches') ? <Button variant="primary" onClick={handleAdd}>+ Add Catch</Button> : undefined}
       >
         <Table columns={columns} data={catches} />
       </Card>

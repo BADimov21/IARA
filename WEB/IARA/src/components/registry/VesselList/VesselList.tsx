@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { vesselApi } from '../../../shared/api';
 import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
-import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { VesselResponseDTO, VesselFilter, BaseFilter } from '../../../shared/types';
@@ -45,14 +46,14 @@ export const VesselList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (!canEdit(role)) return;
+    if (!canCreate(role, 'vessels')) return;
     setEditingItem(null);
     setFormData({ vesselName: '', internationalNumber: '', callSign: '', length: '', width: '', grossTonnage: '', enginePower: '', engineTypeId: '', ownerId: '', captainId: '' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: VesselResponseDTO) => {
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'vessels')) return;
     setEditingItem(item);
     setFormData({
       vesselName: item.vesselName || '',
@@ -70,7 +71,7 @@ export const VesselList: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!canDelete(role)) return;
+    if (!canDelete(role, 'vessels')) return;
     
     const confirmed = await confirm({
       title: 'Delete Vessel',
@@ -93,7 +94,7 @@ export const VesselList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'vessels')) return;
     try {
       const payload = {
         internationalNumber: formData.internationalNumber,
@@ -134,8 +135,8 @@ export const VesselList: React.FC = () => {
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canEdit(role) && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
-          {canDelete(role) && <Button size="small" variant="danger" onClick={() => handleDelete(item.id)}>Delete</Button>}
+          {canEdit(role, 'vessels') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
+          {canDelete(role, 'vessels') && <Button size="small" variant="danger" onClick={() => handleDelete(item.id)}>Delete</Button>}
         </div>
       ),
     },
@@ -145,7 +146,7 @@ export const VesselList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role) && (
+      {!canEdit(role, 'vessels') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.
         </div>
@@ -153,7 +154,7 @@ export const VesselList: React.FC = () => {
       <Card
         title="Vessels"
         subtitle="Manage fishing vessel registry"
-        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>+ Add Vessel</Button> : undefined}
+        actions={canCreate(role, 'vessels') ? <Button variant="primary" onClick={handleAdd}>+ Add Vessel</Button> : undefined}
       >
         <Table columns={columns} data={vessels} />
       </Card>

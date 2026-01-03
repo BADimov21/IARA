@@ -1,0 +1,98 @@
+/**
+ * Personal Information Form Styles
+ */
+
+.personal-info-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%);
+  padding: 2rem;
+}
+
+.personal-info-container {
+  width: 100%;
+  max-width: 600px;
+}
+
+.personal-info-card {
+  animation: slideIn 0.5s ease-out;
+}
+
+.personal-info-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.personal-info-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.personal-info-header p {
+  font-size: 1rem;
+  color: #64748b;
+}
+
+.personal-info-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-actions {
+  margin-top: 1rem;
+}
+
+.form-note {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.form-note p {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0.25rem 0;
+  text-align: center;
+}
+
+.form-note p:first-child {
+  font-weight: 600;
+  color: #0ea5e9;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .personal-info-page {
+    padding: 1rem;
+  }
+
+  .personal-info-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

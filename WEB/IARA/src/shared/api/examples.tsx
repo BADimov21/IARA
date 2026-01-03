@@ -29,7 +29,7 @@ export function LoginComponent() {
     setError(null);
 
     try {
-      const response: any = await authApi.login({
+      const _response: any = await authApi.login({
         userName: username,
         password,
       });
@@ -129,11 +129,11 @@ export function FishSpeciesListComponent() {
 // ==================== Create/Add Example ====================
 
 export function AddFishSpecyComponent() {
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (formData: {
+  const _handleSubmit = async (formData: {
     speciesName: string;
   }) => {
     setLoading(true);
@@ -171,7 +171,7 @@ export function AddFishSpecyComponent() {
 
 export function EditFishSpecyComponent({ fishId }: { fishId: number }) {
   const [fishSpecy, setFishSpecy] = useState<any | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Load existing data
@@ -189,7 +189,7 @@ export function EditFishSpecyComponent({ fishId }: { fishId: number }) {
     loadFishSpecy();
   }, [fishId]);
 
-  const handleUpdate = async (updatedData: {
+  const _handleUpdate = async (updatedData: {
     speciesName: string;
   }) => {
     if (!fishSpecy) return;
@@ -261,7 +261,7 @@ export function DeleteFishSpecyButton({ fishId }: { fishId: number }) {
 
 export function FishingTripsComponent() {
   const [trips, setTrips] = useState<any[]>([]);
-  const [vessels, setVessels] = useState<any[]>([]);
+  const [_vessels, setVessels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

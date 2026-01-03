@@ -72,6 +72,48 @@ public class AuthenticationController : ControllerBase
             return BadRequest(e.Message);
         }
     }
+    
+    /// <summary>
+    /// Changes a user's password
+    /// </summary>
+    /// <param name="changePasswordRequestDTO">Password change details</param>
+    /// <returns>200 OK on success, 400 Bad Request on failure</returns>
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDTO changePasswordRequestDTO)
+    {
+        try
+        {
+            await _authenticationService.ChangePassword(changePasswordRequestDTO);
+            return Ok(new { message = "Password changed successfully" });
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+    
+    /// <summary>
+    /// Changes a user's email
+    /// </summary>
+    /// <param name="changeEmailRequestDTO">Email change details</param>
+    /// <returns>200 OK on success, 400 Bad Request on failure</returns>
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ChangeEmail([FromBody] ChangeEmailRequestDTO changeEmailRequestDTO)
+    {
+        try
+        {
+            await _authenticationService.ChangeEmail(changeEmailRequestDTO);
+            return Ok(new { message = "Email changed successfully" });
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
 }
 
 

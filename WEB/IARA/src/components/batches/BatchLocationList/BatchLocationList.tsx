@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { batchLocationApi } from '../../../shared/api';
 import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
-import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { BatchLocationFilter, BaseFilter } from '../../../shared/types';
@@ -45,14 +46,14 @@ export const BatchLocationList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (!canEdit(role)) return;
+    if (!canCreate(role, 'batchLocations')) return;
     setEditingItem(null);
     setFormData({ name: '', address: '', type: '' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: BatchLocationItem) => {
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'batchLocations')) return;
     setEditingItem(item);
     setFormData({
       name: item.name || '',
@@ -63,7 +64,7 @@ export const BatchLocationList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!canDelete(role)) return;
+    if (!canDelete(role, 'batchLocations')) return;
     
     const confirmed = await confirm({
       title: 'Delete Batch Location',
@@ -86,7 +87,7 @@ export const BatchLocationList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'batchLocations')) return;
     try {
       // Note: API doesn't have edit method, only add
       if (editingItem) {
@@ -116,8 +117,8 @@ export const BatchLocationList: React.FC = () => {
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canEdit(role) && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
-          {canDelete(role) && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
+          {canEdit(role, 'batchLocations') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
+          {canDelete(role, 'batchLocations') && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
         </div>
       ),
     },
@@ -127,7 +128,7 @@ export const BatchLocationList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role) && (
+      {!canEdit(role, 'batchLocations') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.
         </div>
@@ -135,7 +136,7 @@ export const BatchLocationList: React.FC = () => {
       <Card
         title="Batch Locations"
         subtitle="Manage storage and processing locations"
-        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>+ Add Location</Button> : undefined}
+        actions={canCreate(role, 'batchLocations') ? <Button variant="primary" onClick={handleAdd}>+ Add Location</Button> : undefined}
       >
         <Table columns={columns} data={locations} />
       </Card>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { fishingGearTypeApi } from '../../../shared/api';
 import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
-import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { FishingGearTypeResponseDTO, FishingGearTypeFilter, BaseFilter } from '../../../shared/types';
@@ -34,21 +35,21 @@ export const FishingGearTypeList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (!canEdit(role)) return;
+    if (!canCreate(role, 'fishingGearTypes')) return;
     setEditingItem(null);
     setFormData({ name: '', description: '', code: '' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: FishingGearTypeResponseDTO) => {
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'fishingGearTypes')) return;
     setEditingItem(item);
     setFormData({ name: item.name || '', description: item.description || '', code: item.code || '' });
     setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!canDelete(role)) return;
+    if (!canDelete(role, 'fishingGearTypes')) return;
     
     const confirmed = await confirm({
       title: 'Delete Fishing Gear Type',
@@ -71,7 +72,7 @@ export const FishingGearTypeList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'fishingGearTypes')) return;
     try {
       if (editingItem) {
         await fishingGearTypeApi.edit({ id: editingItem.id, ...formData });
@@ -98,8 +99,8 @@ export const FishingGearTypeList: React.FC = () => {
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canEdit(role) && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
-          {canDelete(role) && <Button size="small" variant="danger" onClick={() => handleDelete(item.id)}>Delete</Button>}
+          {canEdit(role, 'fishingGearTypes') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
+          {canDelete(role, 'fishingGearTypes') && <Button size="small" variant="danger" onClick={() => handleDelete(item.id)}>Delete</Button>}
         </div>
       ),
     },
@@ -109,15 +110,21 @@ export const FishingGearTypeList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role) && (
+      {!canEdit(role, 'fishingGearTypes') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.
         </div>
       )}
+      <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.5rem', borderLeft: '4px solid rgb(99, 102, 241)' }}>
+        <strong>🎣 Fishing Gear Types</strong>
+        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
+          Configure types of fishing gear used in commercial and recreational fishing operations. This includes nets, lines, traps, and other fishing equipment.
+        </p>
+      </div>
       <Card
         title="Fishing Gear Types"
         subtitle="Manage fishing gear type nomenclature"
-        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>+ Add Gear Type</Button> : undefined}
+        actions={canCreate(role, 'fishingGearTypes') ? <Button variant="primary" onClick={handleAdd}>+ Add Gear Type</Button> : undefined}
       >
         <Table columns={columns} data={items} />
       </Card>

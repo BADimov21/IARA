@@ -125,6 +125,8 @@ export const useAuth = (): AuthUser => {
   return user;
 };
 
+// Note: These simple helper functions are deprecated. 
+// Use the permissions module from '../utils/permissions' for granular role-based access control.
 export const isAdmin = (role: UserRole): boolean => role === 'Admin';
 export const canEdit = (role: UserRole): boolean => role === 'Admin';
 export const canDelete = (role: UserRole): boolean => role === 'Admin';

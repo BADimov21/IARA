@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { telkDecisionApi } from '../../../shared/api';
 import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
-import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { TELKDecisionFilter, BaseFilter } from '../../../shared/types';
@@ -47,14 +48,14 @@ export const TELKDecisionList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (!canEdit(role)) return;
+    if (!canCreate(role, 'telkDecisions')) return;
     setEditingItem(null);
     setFormData({ decisionNumber: '', decisionDate: '', subject: '', description: '' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: TELKDecisionItem) => {
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'telkDecisions')) return;
     setEditingItem(item);
     setFormData({
       decisionNumber: item.decisionNumber || '',
@@ -66,7 +67,7 @@ export const TELKDecisionList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!canDelete(role)) return;
+    if (!canDelete(role, 'telkDecisions')) return;
     
     const confirmed = await confirm({
       title: 'Delete TELK Decision',
@@ -89,7 +90,7 @@ export const TELKDecisionList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'telkDecisions')) return;
     try {
       const payload = {
         decisionNumber: formData.decisionNumber,
@@ -123,8 +124,8 @@ export const TELKDecisionList: React.FC = () => {
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canEdit(role) && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
-          {canDelete(role) && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
+          {canEdit(role, 'telkDecisions') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
+          {canDelete(role, 'telkDecisions') && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
         </div>
       ),
     },
@@ -134,7 +135,7 @@ export const TELKDecisionList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role) && (
+      {!canEdit(role, 'telkDecisions') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.
         </div>
@@ -142,7 +143,7 @@ export const TELKDecisionList: React.FC = () => {
       <Card
         title="TELK Decisions"
         subtitle="Manage regulatory committee decisions"
-        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>+ Add Decision</Button> : undefined}
+        actions={canCreate(role, 'telkDecisions') ? <Button variant="primary" onClick={handleAdd}>+ Add Decision</Button> : undefined}
       >
         <Table columns={columns} data={decisions} />
       </Card>

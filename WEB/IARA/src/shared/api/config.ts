@@ -10,6 +10,8 @@ export const API_ENDPOINTS = {
   AUTHENTICATION: {
     REGISTER: '/authentication/register',
     LOGIN: '/authentication/login',
+    CHANGE_PASSWORD: '/authentication/changepassword',
+    CHANGE_EMAIL: '/authentication/changeemail',
   },
   // Users
   USER: {
@@ -133,6 +135,8 @@ export const API_ENDPOINTS = {
     ADD: '/person/add',
     EDIT: '/person/edit',
     DELETE: '/person/delete',
+    REGISTER_INFO: '/person/registerpersoninfo',
+    HAS_COMPLETED_INFO: '/person/hascompletedpersonalinfo',
   },
   // TELK Module
   TELK_DECISION: {
@@ -147,6 +151,7 @@ export const API_ENDPOINTS = {
     GET_ALL: '/recreationalcatch/getall',
     GET: '/recreationalcatch/get',
     ADD: '/recreationalcatch/add',
+    EDIT: '/recreationalcatch/edit',
     DELETE: '/recreationalcatch/delete',
   },
   TICKET_PURCHASE: {

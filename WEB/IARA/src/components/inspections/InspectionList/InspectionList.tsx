@@ -1,19 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { inspectionApi } from '../../../shared/api';
 import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
-import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
-import type { InspectionResponseDTO, InspectionFilter, BaseFilter } from '../../../shared/types';
+import type { InspectionFilter, BaseFilter } from '../../../shared/types';
+
+interface InspectionItem {
+  id: number;
+  inspectionDate: string;
+  inspectorId: number;
+  vesselId: number;
+  location: string;
+  observations: string;
+}
 
 export const InspectionList: React.FC = () => {
   const { role } = useAuth();
   const toast = useToast();
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
-  const [inspections, setInspections] = useState<InspectionResponseDTO[]>([]);
+  const [inspections, setInspections] = useState<InspectionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<InspectionResponseDTO | null>(null);
+  const [editingItem, setEditingItem] = useState<InspectionItem | null>(null);
   const [formData, setFormData] = useState({
     inspectorId: '',
     vesselId: '',
@@ -40,18 +50,18 @@ export const InspectionList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (!canEdit(role)) return;
+    if (!canCreate(role, 'inspections')) return;
     setEditingItem(null);
     setFormData({ inspectorId: '', vesselId: '', inspectionDate: '', location: '', observations: '' });
     setIsModalOpen(true);
   };
 
-  const handleEdit = (item: InspectionResponseDTO) => {
-    if (!canEdit(role)) return;
+  const handleEdit = (item: InspectionItem) => {
+    if (!canEdit(role, 'inspections')) return;
     setEditingItem(item);
     setFormData({
-      inspectorId: item.inspectorId || '',
-      vesselId: item.vesselId || '',
+      inspectorId: String(item.inspectorId || ''),
+      vesselId: String(item.vesselId || ''),
       inspectionDate: item.inspectionDate ? item.inspectionDate.split('T')[0] : '',
       location: item.location || '',
       observations: item.observations || '',
@@ -60,7 +70,7 @@ export const InspectionList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!canDelete(role)) return;
+    if (!canDelete(role, 'inspections')) return;
     
     const confirmed = await confirm({
       title: 'Delete Inspection',
@@ -83,11 +93,16 @@ export const InspectionList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'inspections')) return;
     try {
       const payload = {
-        ...formData,
-        inspectionDate: formData.inspectionDate ? new Date(formData.inspectionDate).toISOString() : '',
+        inspectorId: Number(formData.inspectorId),
+        vesselId: Number(formData.vesselId),
+        inspectionDateTime: formData.inspectionDate ? new Date(formData.inspectionDate).toISOString() : new Date().toISOString(),
+        inspectionType: 'Standard',
+        location: formData.location,
+        isCompliant: true,
+        observations: formData.observations,
       };
       if (editingItem) {
         await inspectionApi.edit({ id: editingItem.id, ...payload });
@@ -104,10 +119,10 @@ export const InspectionList: React.FC = () => {
     }
   };
 
-  const columns: Column<InspectionResponseDTO>[] = [
+  const columns: Column<InspectionItem>[] = [
     { key: 'inspectionDate', header: 'Date', render: (item) => item.inspectionDate ? new Date(item.inspectionDate).toLocaleDateString() : '-' },
-    { key: 'inspectorName', header: 'Inspector' },
-    { key: 'vesselName', header: 'Vessel' },
+    { key: 'inspectorId', header: 'Inspector ID' },
+    { key: 'vesselId', header: 'Vessel ID' },
     { key: 'location', header: 'Location' },
     {
       key: 'actions',
@@ -115,8 +130,8 @@ export const InspectionList: React.FC = () => {
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canEdit(role) && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
-          {canDelete(role) && <Button size="small" variant="danger" onClick={() => handleDelete(item.id)}>Delete</Button>}
+          {canEdit(role, 'inspections') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
+          {canDelete(role, 'inspections') && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
         </div>
       ),
     },
@@ -126,7 +141,7 @@ export const InspectionList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role) && (
+      {!canEdit(role, 'inspections') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.
         </div>
@@ -134,7 +149,7 @@ export const InspectionList: React.FC = () => {
       <Card
         title="Inspections"
         subtitle="Track vessel inspections"
-        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>+ Add Inspection</Button> : undefined}
+        actions={canCreate(role, 'inspections') ? <Button variant="primary" onClick={handleAdd}>+ Add Inspection</Button> : undefined}
       >
         <Table columns={columns} data={inspections} />
       </Card>
@@ -150,7 +165,7 @@ export const InspectionList: React.FC = () => {
               <Input label="Inspection Date" type="date" value={formData.inspectionDate} onChange={(e) => setFormData({ ...formData, inspectionDate: e.target.value })} required fullWidth />
               <Input label="Location" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} required fullWidth />
             </div>
-            <Input label="Observations" value={formData.observations} onChange={(e) => setFormData({ ...formData, observations: e.target.value })} fullWidth multiline />
+            <Input label="Observations" value={formData.observations} onChange={(e) => setFormData({ ...formData, observations: e.target.value })} fullWidth />
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
               <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>

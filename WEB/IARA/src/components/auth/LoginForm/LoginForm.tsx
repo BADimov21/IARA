@@ -6,14 +6,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../../shared/api';
-import { Button, Input } from '../../shared';
+import { Button, Input, useToast } from '../../shared';
 import logo from '../../../assets/logo.png';
 import './LoginForm.css';
 
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [submitError] = useState(''); // Reserved for future use
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -42,6 +42,11 @@ export const LoginForm: React.FC = () => {
     // No password length validation on login for security reasons
 
     setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Please fill in all required fields');
+    }
+    
     return Object.keys(newErrors).length === 0;
   };
 
@@ -61,11 +66,61 @@ export const LoginForm: React.FC = () => {
       });
 
       if (response) {
+        toast.success('Login successful!');
         // Redirect to dashboard after successful login
         navigate('/dashboard', { replace: true });
       }
     } catch (error: any) {
-      // Silent fail - no error messages for security
+      console.error('Login failed:', error);
+      console.log('Error details:', {
+        response: error?.response,
+        data: error?.response?.data,
+        message: error?.message
+      });
+      
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (error && typeof error === 'object') {
+        const data = error;
+        
+        // Check for specific error messages
+        if (data.message && data.message !== 'Bad Request') {
+          errorMessage = data.message;
+        } else if (data.error && typeof data.error === 'string') {
+          errorMessage = data.error;
+        } else if (data.title && typeof data.title === 'string') {
+          errorMessage = data.title;
+        } 
+        // Check status code
+        else if (data.statusCode || data.status) {
+          const status = data.statusCode || data.status;
+          if (status === 400 || status === 401) {
+            errorMessage = 'Invalid username or password';
+          } else if (status === 500) {
+            errorMessage = 'Server error. Please try again later.';
+          } else if (status === 503) {
+            errorMessage = 'Service unavailable. The server may be down.';
+          } else if (status >= 500) {
+            errorMessage = 'Server error. Please contact support if the problem persists.';
+          }
+        }
+      } else if (typeof error === 'string') {
+        if (error.toLowerCase().includes('network') || error.toLowerCase().includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else {
+          errorMessage = error;
+        }
+      }
+      
+      // Handle network/connection errors
+      if (error?.name === 'TypeError' && error?.message?.includes('fetch')) {
+        errorMessage = 'Cannot connect to server. Please check your internet connection or try again later.';
+      }
+      
+      toast.error(errorMessage);
+      
+      // Clear password field for security
+      setFormData(prev => ({ ...prev, password: '' }));
     } finally {
       setIsLoading(false);
     }
@@ -79,12 +134,6 @@ export const LoginForm: React.FC = () => {
           <h1 className="login-title">Welcome to EAFA (IARA)</h1>
           <p className="login-subtitle">Fisheries Information System</p>
         </div>
-        
-        {submitError && (
-          <div className="form-error-message">
-            {submitError}
-          </div>
-        )}
         
         <div className="login-form-fields">
           <Input

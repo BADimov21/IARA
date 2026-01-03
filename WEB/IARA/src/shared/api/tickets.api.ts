@@ -9,6 +9,7 @@ import type {
   BaseFilter,
   // Recreational Catch
   RecreationalCatchCreateRequestDTO,
+  RecreationalCatchUpdateRequestDTO,
   RecreationalCatchFilter,
   // Ticket Purchase
   TicketPurchaseCreateRequestDTO,
@@ -31,6 +32,13 @@ export const recreationalCatchApi = {
   add: async (data: RecreationalCatchCreateRequestDTO): Promise<number> => {
     return httpClient.post<number, RecreationalCatchCreateRequestDTO>(
       API_ENDPOINTS.RECREATIONAL_CATCH.ADD,
+      data
+    );
+  },
+
+  edit: async (data: RecreationalCatchUpdateRequestDTO): Promise<boolean> => {
+    return httpClient.post<boolean, RecreationalCatchUpdateRequestDTO>(
+      API_ENDPOINTS.RECREATIONAL_CATCH.EDIT,
       data
     );
   },

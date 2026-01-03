@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { engineTypeApi } from '../../../shared/api';
 import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
-import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { EngineTypeResponseDTO, EngineTypeFilter, BaseFilter } from '../../../shared/types';
@@ -34,14 +35,14 @@ export const EngineTypeList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (!canEdit(role)) return;
+    if (!canCreate(role, 'engineTypes')) return;
     setEditingItem(null);
     setFormData({ typeName: '', averageFuelConsumption: '', fuelUnit: 'L/h' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: EngineTypeResponseDTO) => {
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'engineTypes')) return;
     setEditingItem(item);
     setFormData({ 
       typeName: item.typeName || '', 
@@ -52,7 +53,7 @@ export const EngineTypeList: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!canDelete(role)) return;
+    if (!canDelete(role, 'engineTypes')) return;
     
     const confirmed = await confirm({
       title: 'Delete Engine Type',
@@ -76,7 +77,7 @@ export const EngineTypeList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'engineTypes')) return;
     try {
       const payload = {
         typeName: formData.typeName,
@@ -108,8 +109,8 @@ export const EngineTypeList: React.FC = () => {
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canEdit(role) && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
-          {canDelete(role) && <Button size="small" variant="danger" onClick={() => handleDelete(item.id)}>Delete</Button>}
+          {canEdit(role, 'engineTypes') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
+          {canDelete(role, 'engineTypes') && <Button size="small" variant="danger" onClick={() => handleDelete(item.id)}>Delete</Button>}
         </div>
       ),
     },
@@ -119,15 +120,21 @@ export const EngineTypeList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role) && (
+      {!canEdit(role, 'engineTypes') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.
         </div>
       )}
+      <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.5rem', borderLeft: '4px solid rgb(99, 102, 241)' }}>
+        <strong>⚙️ Engine Types</strong>
+        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
+          Manage vessel engine types and specifications. This information is used for vessel registration and monitoring.
+        </p>
+      </div>
       <Card
         title="Engine Types"
         subtitle="Manage engine type nomenclature"
-        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>+ Add Engine Type</Button> : undefined}
+        actions={canCreate(role, 'engineTypes') ? <Button variant="primary" onClick={handleAdd}>+ Add Engine Type</Button> : undefined}
       >
         <Table columns={columns} data={items} />
       </Card>

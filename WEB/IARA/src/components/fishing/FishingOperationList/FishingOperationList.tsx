@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { fishingOperationApi } from '../../../shared/api';
 import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
-import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { FishingOperationFilter, BaseFilter } from '../../../shared/types';
@@ -49,14 +50,14 @@ export const FishingOperationList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (!canEdit(role)) return;
+    if (!canCreate(role, 'fishingOperations')) return;
     setEditingItem(null);
     setFormData({ fishingTripId: '', operationDate: '', latitude: '', longitude: '', depth: '' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: FishingOperationItem) => {
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'fishingOperations')) return;
     setEditingItem(item);
     setFormData({
       fishingTripId: item.fishingTripId || '',
@@ -69,7 +70,7 @@ export const FishingOperationList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!canDelete(role)) return;
+    if (!canDelete(role, 'fishingOperations')) return;
     
     const confirmed = await confirm({
       title: 'Delete Fishing Operation',
@@ -92,7 +93,7 @@ export const FishingOperationList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'fishingOperations')) return;
     try {
       const payload = {
         tripId: Number(formData.fishingTripId),
@@ -128,8 +129,8 @@ export const FishingOperationList: React.FC = () => {
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canEdit(role) && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
-          {canDelete(role) && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
+          {canEdit(role, 'fishingOperations') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
+          {canDelete(role, 'fishingOperations') && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
         </div>
       ),
     },
@@ -139,7 +140,7 @@ export const FishingOperationList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role) && (
+      {!canEdit(role, 'fishingOperations') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.
         </div>
@@ -147,7 +148,7 @@ export const FishingOperationList: React.FC = () => {
       <Card
         title="Fishing Operations"
         subtitle="Track fishing operations with GPS coordinates"
-        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>+ Add Operation</Button> : undefined}
+        actions={canCreate(role, 'fishingOperations') ? <Button variant="primary" onClick={handleAdd}>+ Add Operation</Button> : undefined}
       >
         <Table columns={columns} data={operations} />
       </Card>

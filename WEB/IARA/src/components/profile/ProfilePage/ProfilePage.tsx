@@ -5,8 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../shared/hooks/useAuth';
-import { userApi } from '../../../shared/api';
-import { Button, Input, Card, Loading } from '../../shared';
+import { userApi, authApi } from '../../../shared/api';
+import { Button, Input, Card, Loading, useToast } from '../../shared';
 import './ProfilePage.css';
 
 interface UserProfile {
@@ -21,6 +21,7 @@ interface UserProfile {
 
 export const ProfilePage: React.FC = () => {
   const { username, userId } = useAuth();
+  const toast = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -157,35 +158,72 @@ export const ProfilePage: React.FC = () => {
     setError('');
     setSuccess('');
 
-    // Validate password change if provided
-    if (formData.newPassword) {
-      if (formData.newPassword !== formData.confirmPassword) {
-        setError('New passwords do not match');
-        return;
-      }
-      if (!formData.currentPassword) {
-        setError('Current password is required to change password');
-        return;
-      }
-    }
+    let hasChanges = false;
 
-    try {
-      // Update profile - API endpoint needs to be implemented
-      if (profile) {
-        console.log('Profile update would be sent:', {
-          id: profile.id,
-          email: formData.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formData.phone,
+    // Handle password change
+    if (formData.newPassword || formData.currentPassword || formData.confirmPassword) {
+      if (!formData.currentPassword) {
+        const msg = 'Current password is required to change password';
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (!formData.newPassword) {
+        const msg = 'New password is required';
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (formData.newPassword.length < 8) {
+        const msg = 'New password must be at least 8 characters';
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (!/[A-Z]/.test(formData.newPassword)) {
+        const msg = 'New password must contain at least one uppercase letter';
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (!/[a-z]/.test(formData.newPassword)) {
+        const msg = 'New password must contain at least one lowercase letter';
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (!/[0-9]/.test(formData.newPassword)) {
+        const msg = 'New password must contain at least one number';
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.newPassword)) {
+        const msg = 'New password must contain at least one special character';
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (formData.newPassword !== formData.confirmPassword) {
+        const msg = 'New passwords do not match';
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      
+      try {
+        if (!profile?.id) {
+          throw new Error('User ID not found');
+        }
+        
+        await authApi.changePassword({
+          userId: profile.id,
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
         });
         
-        // TODO: Implement when API is ready
-        // await userApi.edit({...});
-        
-        setSuccess('Profile updated successfully');
-        setEditing(false);
-        loadProfile();
+        toast.success('Password changed successfully!');
+        hasChanges = true;
         
         // Clear password fields
         setFormData(prev => ({
@@ -194,9 +232,82 @@ export const ProfilePage: React.FC = () => {
           newPassword: '',
           confirmPassword: '',
         }));
+      } catch (error: any) {
+        console.error('Password change error:', error);
+        
+        let errorMessage = 'Failed to change password';
+        
+        if (error && typeof error === 'object') {
+          if (error.message && error.message !== 'Bad Request') {
+            errorMessage = error.message;
+          } else if (error.error && typeof error.error === 'string') {
+            errorMessage = error.error;
+          } else if (error.statusCode === 400) {
+            errorMessage = 'Current password is incorrect or new password does not meet requirements';
+          }
+        }
+        
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return;
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to update profile');
+    }
+
+    // Handle email change
+    if (formData.email && formData.email.trim() !== profile?.email?.trim()) {
+      // Validate email format
+      if (!/\S+@\S+\.\S+/.test(formData.email)) {
+        const msg = 'Please enter a valid email address';
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      
+      try {
+        if (!profile?.id) {
+          throw new Error('User ID not found');
+        }
+        
+        await authApi.changeEmail({
+          userId: profile.id,
+          newEmail: formData.email,
+        });
+        
+        toast.success('Email changed successfully!');
+        hasChanges = true;
+        
+        // Update profile with new email
+        setProfile(prev => prev ? { ...prev, email: formData.email } : null);
+      } catch (error: any) {
+        console.error('Email change error:', error);
+        
+        let errorMessage = 'Failed to change email';
+        
+        if (error && typeof error === 'object') {
+          if (error.message && error.message !== 'Bad Request') {
+            errorMessage = error.message;
+          } else if (error.error && typeof error.error === 'string') {
+            errorMessage = error.error;
+          } else if (error.statusCode === 400) {
+            errorMessage = 'This email is already registered to another account';
+          }
+        }
+        
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return;
+      }
+    }
+
+    // If changes were made, reload profile and exit edit mode
+    if (hasChanges) {
+      setSuccess('Profile updated successfully!');
+      setEditing(false);
+      await loadProfile();
+    } else {
+      // If no changes were made
+      toast.info('No changes to save');
+      setEditing(false);
     }
   };
 

@@ -21,6 +21,7 @@ using IARA.DomainModel.Filters;
 using IARA.Infrastructure.Base;
 using IARA.Infrastructure.Contracts;
 using IARA.Persistence.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace IARA.BusinessLogic.Services.Modules.PersonsModule;
 
@@ -98,6 +99,66 @@ public class PersonService : BaseService, IPersonService
             person.PhoneNumber = dto.PhoneNumber;
 
         return Db.SaveChanges() > 0;
+    }
+
+    public async Task<int> RegisterUserPersonInfo(string userId, UserPersonInfoRequestDTO dto)
+    {
+        // Check if user exists
+        var user = await Db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            throw new ArgumentException("User not found");
+        }
+
+        // Check if user already has personal info
+        if (user.PersonId != null)
+        {
+            throw new InvalidOperationException("User already has personal information registered");
+        }
+
+        // Check if EGN already exists
+        var existingPerson = await Db.Persons.FirstOrDefaultAsync(p => p.EGN == dto.EGN);
+        if (existingPerson != null)
+        {
+            throw new ArgumentException("A person with this EGN already exists");
+        }
+
+        // Create person record
+        var person = new Person
+        {
+            FirstName = dto.FirstName,
+            MiddleName = dto.MiddleName,
+            LastName = dto.LastName,
+            EGN = dto.EGN,
+            DateOfBirth = dto.DateOfBirth,
+            Address = dto.Address,
+            PhoneNumber = dto.PhoneNumber
+        };
+
+        Db.Persons.Add(person);
+        await Db.SaveChangesAsync();
+
+        // Link user to person
+        user.PersonId = person.Id;
+        await Db.SaveChangesAsync();
+
+        return person.Id;
+    }
+
+    public int? GetPersonIdByUserId(string userId)
+    {
+        return Db.Users
+            .Where(u => u.Id == userId)
+            .Select(u => u.PersonId)
+            .FirstOrDefault();
+    }
+
+    public bool HasCompletedPersonalInfo(string userId)
+    {
+        return Db.Users
+            .Where(u => u.Id == userId)
+            .Select(u => u.PersonId)
+            .FirstOrDefault() != null;
     }
 
     public bool Delete(int id)

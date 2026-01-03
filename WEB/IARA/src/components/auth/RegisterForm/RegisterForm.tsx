@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../../shared/api';
-import { Button, Input } from '../../shared';
+import { Button, Input, useToast } from '../../shared';
 import logo from '../../../assets/logo.png';
 
 import './RegisterForm.css';
@@ -21,8 +21,8 @@ interface PasswordRequirements {
 
 export const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [submitError, setSubmitError] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -57,8 +57,14 @@ export const RegisterForm: React.FC = () => {
       setPasswordReqs(checkPasswordRequirements(value));
     }
     
+    // Clear errors when user types and show inline validation
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+    
+    // Validate email format as user types
+    if (name === 'email' && value.trim() && !/\S+@\S+\.\S+/.test(value)) {
+      setErrors((prev) => ({ ...prev, email: 'Email must contain @' }));
     }
   };
 
@@ -109,6 +115,13 @@ export const RegisterForm: React.FC = () => {
     }
 
     setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      // Show first error in toast
+      const firstError = Object.values(newErrors)[0];
+      toast.error(firstError);
+    }
+    
     return Object.keys(newErrors).length === 0;
   };
 
@@ -120,7 +133,6 @@ export const RegisterForm: React.FC = () => {
     }
 
     setIsLoading(true);
-    setSubmitError('');
 
     try {
       console.log('Attempting registration with:', { userName: formData.username, email: formData.email });
@@ -132,11 +144,73 @@ export const RegisterForm: React.FC = () => {
       });
 
       console.log('Registration successful');
-      // Redirect to login on success
-      navigate('/login');
+      toast.success('Registration successful! Please complete your personal information.');
+      
+      // Redirect to personal info form after successful registration
+      setTimeout(() => {
+        navigate('/personal-info');
+      }, 1500);
     } catch (error: any) {
       console.error('Registration failed:', error);
-      setSubmitError('Registration failed. Please try again or contact support.');
+      console.log('Full error object:', JSON.stringify(error, null, 2));
+      
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      // The httpClient throws the error data directly from response.json()
+      if (error && typeof error === 'object') {
+        // Check for ASP.NET Core validation errors format
+        if (error.errors && typeof error.errors === 'object') {
+          const errorFields = Object.keys(error.errors);
+          if (errorFields.length > 0) {
+            const firstFieldErrors = error.errors[errorFields[0]];
+            if (Array.isArray(firstFieldErrors) && firstFieldErrors.length > 0) {
+              errorMessage = firstFieldErrors[0];
+            } else if (typeof firstFieldErrors === 'string') {
+              errorMessage = firstFieldErrors;
+            }
+          }
+        } 
+        // Check for message property
+        else if (error.message && error.message !== 'Bad Request') {
+          errorMessage = error.message;
+        } 
+        // Check for error property
+        else if (error.error && typeof error.error === 'string') {
+          errorMessage = error.error;
+        }
+        // Check for title property
+        else if (error.title && typeof error.title === 'string') {
+          errorMessage = error.title;
+        }
+        // Check status code to provide appropriate message
+        else if (error.statusCode || error.status) {
+          const status = error.statusCode || error.status;
+          if (status === 400) {
+            errorMessage = 'Registration failed. The username or email may already be in use.';
+          } else if (status === 500) {
+            errorMessage = 'Server error. Please try again later.';
+          } else if (status === 503) {
+            errorMessage = 'Service unavailable. The server may be down.';
+          } else if (status >= 500) {
+            errorMessage = 'Server error. Please contact support if the problem persists.';
+          }
+        }
+      } 
+      // Network/connection errors
+      else if (typeof error === 'string') {
+        if (error.toLowerCase().includes('network') || error.toLowerCase().includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else {
+          errorMessage = error;
+        }
+      }
+      // Handle case where error might be a network error object
+      if (error?.name === 'TypeError' && error?.message?.includes('fetch')) {
+        errorMessage = 'Cannot connect to server. Please check your internet connection or try again later.';
+      }
+      
+      console.log('Final error message to display:', errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -150,12 +224,6 @@ export const RegisterForm: React.FC = () => {
           <h1 className="register-title">Create Account</h1>
           <p className="register-subtitle">Join the EAFA (IARA) Fisheries System</p>
         </div>
-        
-        {submitError && (
-          <div className="form-error-message">
-            {submitError}
-          </div>
-        )}
         
         <div className="register-form-fields">
           <Input

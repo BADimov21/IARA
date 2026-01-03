@@ -17,3 +17,4 @@ export { ToastProvider, useToast } from './Toast';
 export { AdminRoute } from './AdminRoute';
 export { Footer } from './Footer';
 export { ConfirmDialog } from './ConfirmDialog';
+export { PersonalInfoGuard } from './PersonalInfoGuard';

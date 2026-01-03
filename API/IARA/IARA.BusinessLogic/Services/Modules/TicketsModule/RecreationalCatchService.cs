@@ -50,6 +50,7 @@ public class RecreationalCatchService : BaseService, IRecreationalCatchService
         var recreationalCatch = new RecreationalCatch
         {
             TicketPurchaseId = dto.TicketPurchaseId,
+            PersonId = dto.PersonId,
             SpeciesId = dto.SpeciesId,
             CatchDateTime = dto.CatchDateTime,
             Location = dto.Location,
@@ -61,6 +62,21 @@ public class RecreationalCatchService : BaseService, IRecreationalCatchService
         Db.SaveChanges();
 
         return recreationalCatch.Id;
+    }
+
+    public bool Edit(RecreationalCatchUpdateRequestDTO dto)
+    {
+        var recreationalCatch = GetAllFromDatabase().Where(rc => rc.Id == dto.Id).Single();
+
+        recreationalCatch.TicketPurchaseId = dto.TicketPurchaseId;
+        recreationalCatch.PersonId = dto.PersonId;
+        recreationalCatch.SpeciesId = dto.SpeciesId;
+        recreationalCatch.CatchDateTime = dto.CatchDateTime;
+        recreationalCatch.Location = dto.Location;
+        recreationalCatch.Quantity = dto.Quantity;
+        recreationalCatch.WeightKg = dto.WeightKg;
+
+        return Db.SaveChanges() > 0;
     }
 
     public bool Delete(int id)

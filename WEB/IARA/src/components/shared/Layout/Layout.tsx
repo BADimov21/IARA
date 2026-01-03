@@ -6,7 +6,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../shared/api';
-import { useAuth, isAdmin } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { isAdmin } from '../../../shared/utils/permissions';
+import type { UserRole } from '../../../shared/utils/permissions';
 import { Footer } from '../Footer';
 import logo from '../../../assets/logo.png';
 import './Layout.css';
@@ -19,68 +21,106 @@ interface NavItem {
   label: string;
   path: string;
   children?: NavItem[];
+  adminOnly?: boolean;
 }
 
-const navigationItems: NavItem[] = [
-  { label: 'Dashboard', path: '/dashboard' },
-  {
-    label: 'Nomenclatures',
-    path: '/nomenclatures',
-    children: [
-      { label: 'Fish Species', path: '/nomenclatures/fish-species' },
-      { label: 'Engine Types', path: '/nomenclatures/engine-types' },
-      { label: 'Fishing Gear Types', path: '/nomenclatures/fishing-gear-types' },
-      { label: 'Ticket Types', path: '/nomenclatures/ticket-types' },
-    ],
-  },
-  {
-    label: 'Fishing',
-    path: '/fishing',
-    children: [
-      { label: 'Fishing Trips', path: '/fishing/trips' },
-      { label: 'Fishing Operations', path: '/fishing/operations' },
-      { label: 'Catches', path: '/fishing/catches' },
-      { label: 'Fishing Permits', path: '/fishing/permits' },
-      { label: 'Fishing Gear', path: '/fishing/gear' },
-    ],
-  },
-  {
-    label: 'Batches',
-    path: '/batches',
-    children: [
-      { label: 'Landings', path: '/batches/landings' },
-      { label: 'Fish Batches', path: '/batches/fish-batches' },
-      { label: 'Batch Locations', path: '/batches/locations' },
-    ],
-  },
-  {
-    label: 'Inspections',
-    path: '/inspections',
-    children: [
-      { label: 'Inspections', path: '/inspections' },
-      { label: 'Inspectors', path: '/inspections/inspectors' },
-      { label: 'Violations', path: '/inspections/violations' },
-    ],
-  },
-  {
-    label: 'Registry',
-    path: '/registry',
-    children: [
-      { label: 'Persons', path: '/registry/persons' },
-      { label: 'Vessels', path: '/registry/vessels' },
-      { label: 'TELK Decisions', path: '/registry/telk-decisions' },
-    ],
-  },
-  {
-    label: 'Recreational Fishing',
-    path: '/recreational',
-    children: [
-      { label: 'Ticket Purchases', path: '/recreational/tickets' },
-      { label: 'Catches', path: '/recreational/catches' },
-    ],
-  },
-  { label: 'Users', path: '/users' },
-];
+// Define navigation structure with role-based access
+const getNavigationItems = (role: UserRole): NavItem[] => {
+  const adminItems: NavItem[] = [
+    { label: 'Dashboard', path: '/dashboard' },
+    {
+      label: 'Nomenclatures',
+      path: '/nomenclatures',
+      children: [
+        { label: 'Fish Species', path: '/nomenclatures/fish-species' },
+        { label: 'Engine Types', path: '/nomenclatures/engine-types' },
+        { label: 'Fishing Gear Types', path: '/nomenclatures/fishing-gear-types' },
+        { label: 'Ticket Types', path: '/nomenclatures/ticket-types' },
+      ],
+    },
+    {
+      label: 'Fishing',
+      path: '/fishing',
+      children: [
+        { label: 'Fishing Trips', path: '/fishing/trips' },
+        { label: 'Fishing Operations', path: '/fishing/operations' },
+        { label: 'Catches', path: '/fishing/catches' },
+        { label: 'Fishing Permits', path: '/fishing/permits' },
+        { label: 'Fishing Gear', path: '/fishing/gear' },
+      ],
+    },
+    {
+      label: 'Batches',
+      path: '/batches',
+      children: [
+        { label: 'Landings', path: '/batches/landings' },
+        { label: 'Fish Batches', path: '/batches/fish-batches' },
+        { label: 'Batch Locations', path: '/batches/locations' },
+      ],
+    },
+    {
+      label: 'Inspections',
+      path: '/inspections',
+      children: [
+        { label: 'Inspections', path: '/inspections' },
+        { label: 'Inspectors', path: '/inspections/inspectors' },
+        { label: 'Violations', path: '/inspections/violations' },
+      ],
+    },
+    {
+      label: 'Registry',
+      path: '/registry',
+      children: [
+        { label: 'Persons', path: '/registry/persons' },
+        { label: 'Vessels', path: '/registry/vessels' },
+        { label: 'TELK Decisions', path: '/registry/telk-decisions' },
+      ],
+    },
+    {
+      label: 'Recreational Fishing',
+      path: '/recreational',
+      children: [
+        { label: 'Ticket Purchases', path: '/recreational/tickets' },
+        { label: 'Catches', path: '/recreational/catches' },
+      ],
+    },
+    { label: 'Users', path: '/users', adminOnly: true },
+  ];
+
+  const userItems: NavItem[] = [
+    { label: 'Dashboard', path: '/dashboard' },
+    {
+      label: 'My Tickets',
+      path: '/recreational/tickets',
+    },
+    {
+      label: 'My Catches',
+      path: '/recreational/catches',
+    },
+    {
+      label: 'Fishing',
+      path: '/fishing',
+      children: [
+        { label: 'View Permits', path: '/fishing/permits' },
+        { label: 'Record Operation', path: '/fishing/operations' },
+        { label: 'Record Catch', path: '/fishing/catches' },
+      ],
+    },
+    {
+      label: 'View Information',
+      path: '/view',
+      children: [
+        { label: 'Fish Species', path: '/nomenclatures/fish-species' },
+        { label: 'Vessels', path: '/registry/vessels' },
+        { label: 'Persons', path: '/registry/persons' },
+        { label: 'Inspections', path: '/inspections' },
+      ],
+    },
+    { label: '📚 Help & Guide', path: '/help' },
+  ];
+
+  return isAdmin(role) ? adminItems : userItems;
+};
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
@@ -89,22 +129,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const { role } = useAuth();
 
-  // Debug role for Users menu visibility
-  console.log('=== LAYOUT USERS MENU DEBUG ===');
-  console.log('Current role:', role);
-  console.log('Role type:', typeof role);
-  console.log('isAdmin(role):', isAdmin(role));
-  console.log('role === "Admin":', role === 'Admin');
-  console.log('=== END USERS MENU DEBUG ===');
+  // Get navigation items based on user role
+  const navigationItems = getNavigationItems(role);
 
-  // Filter navigation items based on user role
-  const filteredNavItems = navigationItems.filter(item => {
-    // Show Users page only to admin users
-    if (item.path === '/users') {
-      return isAdmin(role);
-    }
-    return true;
-  });
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -160,7 +187,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Sidebar Navigation */}
         <aside className={`layout-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
           <nav className="layout-nav">
-            {filteredNavItems.map((item) => (
+            {navigationItems.map((item) => (
               <div key={item.path} className="nav-item-container">
                 {item.children ? (
                   <>

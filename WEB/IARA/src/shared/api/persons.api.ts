@@ -12,6 +12,21 @@ import type {
   PersonFilter,
 } from '../types';
 
+interface UserPersonInfoRequestDTO {
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  egn: string;
+  dateOfBirth: string;
+  address: string;
+  phoneNumber: string;
+}
+
+interface PersonalInfoStatusResponse {
+  hasCompleted: boolean;
+  personId: number | null;
+}
+
 export const personApi = {
   getAll: async (filters: BaseFilter<PersonFilter>): Promise<any[]> => {
     return httpClient.post<any[], BaseFilter<PersonFilter>>(
@@ -40,5 +55,18 @@ export const personApi = {
 
   delete: async (id: number): Promise<boolean> => {
     return httpClient.delete<boolean>(`${API_ENDPOINTS.PERSON.DELETE}?id=${id}`);
+  },
+
+  registerPersonInfo: async (data: UserPersonInfoRequestDTO): Promise<{ personId: number; message: string }> => {
+    return httpClient.post<{ personId: number; message: string }, UserPersonInfoRequestDTO>(
+      API_ENDPOINTS.PERSON.REGISTER_INFO,
+      data
+    );
+  },
+
+  hasCompletedPersonalInfo: async (): Promise<PersonalInfoStatusResponse> => {
+    return httpClient.get<PersonalInfoStatusResponse>(
+      API_ENDPOINTS.PERSON.HAS_COMPLETED_INFO
+    );
   },
 };

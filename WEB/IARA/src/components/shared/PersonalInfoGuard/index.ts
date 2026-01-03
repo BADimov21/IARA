@@ -1,0 +1,1 @@
+export { PersonalInfoGuard } from './PersonalInfoGuard';

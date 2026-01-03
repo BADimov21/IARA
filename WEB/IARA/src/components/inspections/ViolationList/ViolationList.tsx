@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { violationApi } from '../../../shared/api';
 import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
-import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { ViolationFilter, BaseFilter } from '../../../shared/types';
@@ -47,14 +48,14 @@ export const ViolationList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (!canEdit(role)) return;
+    if (!canCreate(role, 'violations')) return;
     setEditingItem(null);
     setFormData({ inspectionId: '', violationType: '', description: '', fineAmount: '' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: ViolationItem) => {
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'violations')) return;
     setEditingItem(item);
     setFormData({
       inspectionId: item.inspectionId?.toString() || '',
@@ -66,7 +67,7 @@ export const ViolationList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!canDelete(role)) return;
+    if (!canDelete(role, 'violations')) return;
     
     const confirmed = await confirm({
       title: 'Delete Violation',
@@ -89,7 +90,7 @@ export const ViolationList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'violations')) return;
     try {
       const payload = {
         inspectionId: Number(formData.inspectionId),
@@ -122,8 +123,8 @@ export const ViolationList: React.FC = () => {
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canEdit(role) && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
-          {canDelete(role) && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
+          {canEdit(role, 'violations') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
+          {canDelete(role, 'violations') && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
         </div>
       ),
     },
@@ -133,7 +134,7 @@ export const ViolationList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role) && (
+      {!canEdit(role, 'violations') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.
         </div>
@@ -141,7 +142,7 @@ export const ViolationList: React.FC = () => {
       <Card
         title="Violations"
         subtitle="Track fishing regulation violations"
-        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>+ Add Violation</Button> : undefined}
+        actions={canCreate(role, 'violations') ? <Button variant="primary" onClick={handleAdd}>+ Add Violation</Button> : undefined}
       >
         <Table columns={columns} data={violations} />
       </Card>

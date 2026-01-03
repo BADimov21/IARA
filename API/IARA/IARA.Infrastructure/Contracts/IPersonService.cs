@@ -15,6 +15,21 @@ public interface IPersonService
     int Add(PersonCreateRequestDTO dto);
     bool Edit(PersonUpdateRequestDTO dto);
     bool Delete(int id);
+    
+    /// <summary>
+    /// Creates a person record for the current authenticated user
+    /// </summary>
+    Task<int> RegisterUserPersonInfo(string userId, UserPersonInfoRequestDTO dto);
+    
+    /// <summary>
+    /// Gets the person ID associated with a user
+    /// </summary>
+    int? GetPersonIdByUserId(string userId);
+    
+    /// <summary>
+    /// Checks if a user has completed their personal information
+    /// </summary>
+    bool HasCompletedPersonalInfo(string userId);
 }
 
 

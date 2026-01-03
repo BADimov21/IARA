@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { landingApi } from '../../../shared/api';
 import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
-import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { LandingFilter, BaseFilter } from '../../../shared/types';
@@ -47,14 +48,14 @@ export const LandingList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (!canEdit(role)) return;
+    if (!canCreate(role, 'landings')) return;
     setEditingItem(null);
     setFormData({ fishingTripId: '', landingDate: '', port: '', totalWeight: '' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: LandingItem) => {
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'landings')) return;
     setEditingItem(item);
     setFormData({
       fishingTripId: item.fishingTripId || '',
@@ -66,7 +67,7 @@ export const LandingList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!canDelete(role)) return;
+    if (!canDelete(role, 'landings')) return;
     
     const confirmed = await confirm({
       title: 'Delete Landing',
@@ -89,7 +90,7 @@ export const LandingList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'landings')) return;
     try {
       const payload = {
         tripId: Number(formData.fishingTripId),
@@ -122,8 +123,8 @@ export const LandingList: React.FC = () => {
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canEdit(role) && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
-          {canDelete(role) && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
+          {canEdit(role, 'landings') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
+          {canDelete(role, 'landings') && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
         </div>
       ),
     },
@@ -133,7 +134,7 @@ export const LandingList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role) && (
+      {!canEdit(role, 'landings') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.
         </div>
@@ -141,7 +142,7 @@ export const LandingList: React.FC = () => {
       <Card
         title="Landings"
         subtitle="Track fish landings at ports"
-        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>+ Add Landing</Button> : undefined}
+        actions={canCreate(role, 'landings') ? <Button variant="primary" onClick={handleAdd}>+ Add Landing</Button> : undefined}
       >
         <Table columns={columns} data={landings} />
       </Card>

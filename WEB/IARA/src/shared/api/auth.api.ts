@@ -57,6 +57,28 @@ export const authApi = {
   isAuthenticated: (): boolean => {
     return tokenStorage.get() !== null;
   },
+  
+  /**
+   * Change user password
+   */
+  changePassword: async (data: { userId: string; currentPassword: string; newPassword: string }): Promise<void> => {
+    await httpClient.post<void, typeof data>(
+      API_ENDPOINTS.AUTHENTICATION.CHANGE_PASSWORD,
+      data,
+      true
+    );
+  },
+  
+  /**
+   * Change user email
+   */
+  changeEmail: async (data: { userId: string; newEmail: string }): Promise<void> => {
+    await httpClient.post<void, typeof data>(
+      API_ENDPOINTS.AUTHENTICATION.CHANGE_EMAIL,
+      data,
+      true
+    );
+  },
 };
 
 export const userApi = {

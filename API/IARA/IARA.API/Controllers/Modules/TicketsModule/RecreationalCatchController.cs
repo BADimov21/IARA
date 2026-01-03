@@ -45,8 +45,13 @@ public class RecreationalCatchController : Controller
         return Ok(_recreationalCatchService.Add(recreationalCatch));
     }
 
+    [HttpPost]
+    public IActionResult Edit([FromBody] RecreationalCatchUpdateRequestDTO recreationalCatch)
+    {
+        return Ok(_recreationalCatchService.Edit(recreationalCatch));
+    }
+
     [HttpDelete]
-    [Authorize(Roles = "Admin")]
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_recreationalCatchService.Delete(id));

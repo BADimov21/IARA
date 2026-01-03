@@ -12,6 +12,7 @@ using IARA.DomainModel.Filters;
 using IARA.Infrastructure.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace IARA.API.Controllers.Modules.PersonsModule;
 
@@ -57,6 +58,62 @@ public class PersonController : Controller
     public IActionResult Delete([FromQuery] int id)
     {
         return Ok(_personService.Delete(id));
+    }
+
+    /// <summary>
+    /// Registers personal information for the current authenticated user
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> RegisterPersonInfo([FromBody] UserPersonInfoRequestDTO dto)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "User not authenticated" });
+            }
+
+            var personId = await _personService.RegisterUserPersonInfo(userId, dto);
+            return Ok(new { personId, message = "Personal information registered successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while registering personal information", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Checks if the current user has completed their personal information
+    /// </summary>
+    [HttpGet]
+    public IActionResult HasCompletedPersonalInfo()
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "User not authenticated" });
+            }
+
+            var hasCompleted = _personService.HasCompletedPersonalInfo(userId);
+            var personId = _personService.GetPersonIdByUserId(userId);
+            
+            return Ok(new { hasCompleted, personId });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred", error = ex.Message });
+        }
     }
 }
 

@@ -10,6 +10,7 @@ public interface IRecreationalCatchService
     IQueryable<RecreationalCatchResponseDTO> GetAll(BaseFilter<RecreationalCatchFilter> filters);
     IQueryable<RecreationalCatchResponseDTO> Get(int id);
     int Add(RecreationalCatchCreateRequestDTO dto);
+    bool Edit(RecreationalCatchUpdateRequestDTO dto);
     bool Delete(int id);
 }
 

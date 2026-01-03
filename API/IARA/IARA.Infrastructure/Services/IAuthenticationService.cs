@@ -20,6 +20,18 @@ public interface IAuthenticationService
     /// <param name="login">Login credentials</param>
     /// <returns>Authentication response with JWT token</returns>
     Task<AuthenticationResponseDTO> Login(LoginRequestDTO login);
+    
+    /// <summary>
+    /// Changes a user's password
+    /// </summary>
+    /// <param name="changePassword">Password change details</param>
+    Task ChangePassword(ChangePasswordRequestDTO changePassword);
+    
+    /// <summary>
+    /// Changes a user's email
+    /// </summary>
+    /// <param name="changeEmail">Email change details</param>
+    Task ChangeEmail(ChangeEmailRequestDTO changeEmail);
 }
 
 

@@ -122,4 +122,61 @@ public class AuthenticationService : IAuthenticationService
 
         return response;
     }
+    
+    public async Task ChangePassword(ChangePasswordRequestDTO changePassword)
+    {
+        User? user = await _userManager.FindByIdAsync(changePassword.UserId);
+        if (user is null)
+        {
+            throw new ArgumentException("User not found");
+        }
+
+        // Verify current password
+        bool isPasswordValid = await _userManager.CheckPasswordAsync(user, changePassword.CurrentPassword);
+        if (!isPasswordValid)
+        {
+            throw new ArgumentException("Current password is incorrect");
+        }
+
+        // Change password
+        IdentityResult result = await _userManager.ChangePasswordAsync(
+            user, 
+            changePassword.CurrentPassword, 
+            changePassword.NewPassword
+        );
+
+        if (!result.Succeeded)
+        {
+            string errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new ArgumentException($"Password change failed: {errors}");
+        }
+    }
+    
+    public async Task ChangeEmail(ChangeEmailRequestDTO changeEmail)
+    {
+        User? user = await _userManager.FindByIdAsync(changeEmail.UserId);
+        if (user is null)
+        {
+            throw new ArgumentException("User not found");
+        }
+
+        // Check if new email is already in use by another user
+        User? existingUser = await _userManager.FindByEmailAsync(changeEmail.NewEmail);
+        if (existingUser is not null && existingUser.Id != user.Id)
+        {
+            throw new ArgumentException("This email is already registered to another account");
+        }
+
+        // Update email
+        user.Email = changeEmail.NewEmail;
+        user.NormalizedEmail = changeEmail.NewEmail.ToUpper();
+        
+        IdentityResult result = await _userManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
+        {
+            string errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new ArgumentException($"Email change failed: {errors}");
+        }
+    }
 }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { fishBatchApi } from '../../../shared/api';
 import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
-import { useAuth, canEdit, canDelete } from '../../../shared/hooks/useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
+import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { FishBatchFilter, BaseFilter } from '../../../shared/types';
@@ -48,14 +49,14 @@ export const FishBatchList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    if (!canEdit(role)) return;
+    if (!canCreate(role, 'fishBatches')) return;
     setEditingItem(null);
     setFormData({ fishSpecyId: '', quantity: '', weight: '', batchNumber: '' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: FishBatchItem) => {
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'fishBatches')) return;
     setEditingItem(item);
     setFormData({
       fishSpecyId: item.fishSpecyId || '',
@@ -67,7 +68,7 @@ export const FishBatchList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!canDelete(role)) return;
+    if (!canDelete(role, 'fishBatches')) return;
     
     const confirmed = await confirm({
       title: 'Delete Fish Batch',
@@ -90,7 +91,7 @@ export const FishBatchList: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit(role)) return;
+    if (!canEdit(role, 'fishBatches')) return;
     try {
       const payload = {
         landingId: 1,
@@ -125,8 +126,8 @@ export const FishBatchList: React.FC = () => {
       width: '180px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canEdit(role) && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
-          {canDelete(role) && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
+          {canEdit(role, 'fishBatches') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
+          {canDelete(role, 'fishBatches') && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
         </div>
       ),
     },
@@ -136,7 +137,7 @@ export const FishBatchList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role) && (
+      {!canEdit(role, 'fishBatches') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.
         </div>
@@ -144,7 +145,7 @@ export const FishBatchList: React.FC = () => {
       <Card
         title="Fish Batches"
         subtitle="Manage fish batch inventory"
-        actions={canEdit(role) ? <Button variant="primary" onClick={handleAdd}>+ Add Batch</Button> : undefined}
+        actions={canCreate(role, 'fishBatches') ? <Button variant="primary" onClick={handleAdd}>+ Add Batch</Button> : undefined}
       >
         <Table columns={columns} data={batches} />
       </Card>

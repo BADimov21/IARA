@@ -15,6 +15,17 @@ export interface RecreationalCatchCreateRequestDTO {
   weightKg: number;
 }
 
+export interface RecreationalCatchUpdateRequestDTO {
+  id: number;
+  ticketPurchaseId: number;
+  personId: number;
+  speciesId: number;
+  catchDateTime: string;
+  location?: string;
+  quantity: number;
+  weightKg: number;
+}
+
 export interface RecreationalCatchFilter {
   id?: number;
   ticketPurchaseId?: number;
