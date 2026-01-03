@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import logo from '../../../assets/logo.png';
 import './Loading.css';
 
 interface LoadingProps {
@@ -19,6 +20,11 @@ export const Loading: React.FC<LoadingProps> = ({
 }) => {
   const content = (
     <div className="loading-content">
+      <img 
+        src={logo} 
+        alt="IARA Logo" 
+        className="loading-logo"
+      />
       <div className={`loading-spinner ${size}`} />
       {text && <p className="loading-text">{text}</p>}
     </div>

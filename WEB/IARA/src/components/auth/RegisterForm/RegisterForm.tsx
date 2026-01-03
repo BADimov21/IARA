@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../../shared/api';
 import { Button, Input } from '../../shared';
+import logo from '../../../assets/logo.png';
 
 import './RegisterForm.css';
 
@@ -145,8 +146,9 @@ export const RegisterForm: React.FC = () => {
     <div className="register-container">
       <form onSubmit={handleSubmit} className="register-form">
         <div className="register-header">
+          <img src={logo} alt="IARA Logo" className="register-logo" />
           <h1 className="register-title">Create Account</h1>
-          <p className="register-subtitle">Join the IARA Fisheries System</p>
+          <p className="register-subtitle">Join the EAFA (IARA) Fisheries System</p>
         </div>
         
         {submitError && (

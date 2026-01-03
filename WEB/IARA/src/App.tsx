@@ -22,6 +22,7 @@ import { InspectorList } from './components/inspections/InspectorList';
 import { ViolationList } from './components/inspections/ViolationList';
 import { FishBatchList, LandingList, BatchLocationList } from './components/batches';
 import { RecreationalCatchList, TicketPurchaseList } from './components/recreational';
+import logo from './assets/logo.png';
 import './App.css';
 
 // Protected Route Component
@@ -82,6 +83,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="dashboard">
+      <img src={logo} alt="IARA Logo" className="dashboard-logo" />
       <h1>Executive Agency for Fisheries and Aquaculture</h1>
       <h2>EAFA (IARA) Dashboard</h2>
       <p>Welcome to the Fisheries Information System</p>

@@ -24,6 +24,30 @@
   flex-direction: column;
   align-items: center;
   gap: 1rem;
+  position: relative;
+}
+
+.loading-logo {
+  width: 80px !important;
+  height: 80px !important;
+  margin-bottom: 0.5rem;
+  display: block !important;
+  opacity: 1 !important;
+  z-index: 10000;
+  position: relative;
+  object-fit: contain;
+  background-color: white;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .loading-spinner {

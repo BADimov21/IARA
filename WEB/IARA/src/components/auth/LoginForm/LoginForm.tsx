@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../../shared/api';
 import { Button, Input } from '../../shared';
+import logo from '../../../assets/logo.png';
 import './LoginForm.css';
 
 export const LoginForm: React.FC = () => {
@@ -74,7 +75,8 @@ export const LoginForm: React.FC = () => {
     <div className="login-container">
       <form onSubmit={handleSubmit} className="login-form">
         <div className="login-header">
-          <h1 className="login-title">Welcome to IARA</h1>
+          <img src={logo} alt="IARA Logo" className="login-logo" />
+          <h1 className="login-title">Welcome to EAFA (IARA)</h1>
           <p className="login-subtitle">Fisheries Information System</p>
         </div>
         

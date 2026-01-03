@@ -73,6 +73,18 @@
   }
 }
 
+.layout-header-logo {
+  width: 50px;
+  height: auto;
+  object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .layout-header-logo {
+    width: 40px;
+  }
+}
+
 .layout-header-title {
   flex: 1;
 }

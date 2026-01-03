@@ -14,16 +14,26 @@ interface AdminRouteProps {
 
 export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const { role, roleFromAPI } = useAuth();
+  const [showLoading, setShowLoading] = React.useState(true);
+  
+  // Force loading screen to show for 2 seconds to see the logo
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
   
   console.log('=== ADMIN ROUTE DEBUG ===');
   console.log('role:', role);
   console.log('roleFromAPI:', roleFromAPI);
   console.log('isAdmin(role):', isAdmin(role));
+  console.log('showLoading:', showLoading);
   console.log('=== END ADMIN ROUTE DEBUG ===');
   
-  // Show loading while fetching role from API
-  if (!roleFromAPI) {
-    return <Loading />;
+  // Show loading while fetching role from API OR during forced delay
+  if (!roleFromAPI || showLoading) {
+    return <Loading fullScreen />;
   }
   
   // Once role is determined, check if user is admin

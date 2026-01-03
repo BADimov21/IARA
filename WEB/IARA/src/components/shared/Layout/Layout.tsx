@@ -8,6 +8,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { authApi } from '../../../shared/api';
 import { useAuth, isAdmin } from '../../../shared/hooks/useAuth';
 import { Footer } from '../Footer';
+import logo from '../../../assets/logo.png';
 import './Layout.css';
 
 interface LayoutProps {
@@ -131,6 +132,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <button className="layout-menu-button" onClick={toggleSidebar} aria-label="Toggle menu">
           ☰
         </button>
+        <img src={logo} alt="IARA Logo" className="layout-header-logo" />
         <div className="layout-header-title">
           <h1>Executive Agency for Fisheries and Aquaculture</h1>
         </div>
