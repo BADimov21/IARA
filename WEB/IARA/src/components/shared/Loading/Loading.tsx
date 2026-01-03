@@ -22,7 +22,7 @@ export const Loading: React.FC<LoadingProps> = ({
     <div className="loading-content">
       <img 
         src={logo} 
-        alt="IARA Logo" 
+        alt="EAFA (IARA) Logo" 
         className="loading-logo"
       />
       <div className={`loading-spinner ${size}`} />

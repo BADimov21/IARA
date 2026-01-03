@@ -1,3 +1,5 @@
+<p align="center"><img src="./WEB/IARA/src/assets/logo.png" width="400px" height="350px"></img></p>
+
 # IARA - Fishery Information System
 
 A comprehensive fishing management system built with ASP.NET Core, Entity Framework Core, and SQL Server. IARA provides a complete API for managing fishing operations, vessels, permits, catches, inspections, and recreational fishing activities.
@@ -356,4 +358,4 @@ This project is licensed under the MIT License.
 ---
 
 **Version**: 1.0.0  
-**Last Updated**: December 2025
+**Last Updated**: January 2026
