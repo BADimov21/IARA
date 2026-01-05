@@ -20,6 +20,10 @@ public partial class Violation
     [Column(TypeName = "decimal(10, 2)")]
     public decimal FineAmount { get; set; }
 
+    public bool IsPaid { get; set; }
+
+    public DateTime? PaidDate { get; set; }
+
     [ForeignKey("InspectionId")]
     [InverseProperty("Violations")]
     public virtual Inspection Inspection { get; set; } = null!;

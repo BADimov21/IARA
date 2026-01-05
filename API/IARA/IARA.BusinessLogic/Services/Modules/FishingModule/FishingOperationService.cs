@@ -7,6 +7,7 @@ using IARA.DomainModel.Filters;
 using IARA.Infrastructure.Base;
 using IARA.Infrastructure.Contracts;
 using IARA.Persistence.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace IARA.BusinessLogic.Services.Modules.FishingModule;
 
@@ -32,6 +33,10 @@ public class FishingOperationService : BaseService, IFishingOperationService
 
     public int Add(FishingOperationCreateRequestDTO dto)
     {
+        // Note: Electronic fishing log is REQUIRED for vessels over 10 meters
+        // but can be used by all vessels. No validation needed here.
+        // The requirement is enforced by business rules, not technical constraints.
+        
         var operation = new FishingOperation
         {
             TripId = dto.TripId,

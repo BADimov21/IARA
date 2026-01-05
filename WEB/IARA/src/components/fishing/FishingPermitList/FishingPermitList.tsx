@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { fishingPermitApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { FishingPermitFilter, BaseFilter } from '../../../shared/types';
+import type { FilterField } from '../../shared/FilterPanel/FilterPanel';
 
 interface FishingPermitItem {
   id: number;
@@ -24,6 +25,8 @@ export const FishingPermitList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FishingPermitItem | null>(null);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
   const [formData, setFormData] = useState({
     vesselId: '',
     permitNumber: '',
@@ -31,14 +34,22 @@ export const FishingPermitList: React.FC = () => {
     expiryDate: '',
   });
 
+  const filterFields: FilterField[] = [
+    { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
+    { name: 'permitNumber', label: 'Permit Number', type: 'text', placeholder: 'Search permit number' },
+    { name: 'vesselId', label: 'Vessel ID', type: 'number', placeholder: 'Search by vessel' },
+    { name: 'issueDateFrom', label: 'Issue Date From', type: 'date' },
+    { name: 'issueDateTo', label: 'Issue Date To', type: 'date' },
+  ];
+
   useEffect(() => {
     loadPermits();
   }, []);
 
-  const loadPermits = async () => {
+  const loadPermits = async (customFilters?: FishingPermitFilter) => {
     try {
       setLoading(true);
-      const filters: BaseFilter<FishingPermitFilter> = { page: 1, pageSize: 100, filters: {} };
+      const filters: BaseFilter<FishingPermitFilter> = { page: 1, pageSize: 100, filters: customFilters || {} };
       const data = await fishingPermitApi.getAll(filters);
       setPermits(data);
     } catch (error) {
@@ -46,6 +57,30 @@ export const FishingPermitList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (name: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    const filters: FishingPermitFilter = {};
+    Object.keys(filterValues).forEach((key) => {
+      const value = filterValues[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        if (key === 'id' || key === 'vesselId') {
+          filters[key] = Number(value);
+        } else {
+          filters[key as keyof FishingPermitFilter] = value as any;
+        }
+      }
+    });
+    loadPermits(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({});
+    loadPermits({});
   };
 
   const handleAdd = () => {
@@ -116,6 +151,7 @@ export const FishingPermitList: React.FC = () => {
   };
 
   const columns: Column<FishingPermitItem>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'permitNumber', header: 'Permit Number' },
     { key: 'vesselName', header: 'Vessel' },
     { key: 'issueDate', header: 'Issue Date', render: (item) => item.issueDate ? new Date(item.issueDate).toLocaleDateString() : '-' },
@@ -142,6 +178,15 @@ export const FishingPermitList: React.FC = () => {
           You have view-only access to this page.
         </div>
       )}
+      <FilterPanel
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        isExpanded={isFilterExpanded}
+        onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
+      />
       <Card
         title="Fishing Permits"
         subtitle="Manage vessel fishing permits and licenses"

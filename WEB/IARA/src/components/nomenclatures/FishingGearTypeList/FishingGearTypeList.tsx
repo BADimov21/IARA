@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { fishingGearTypeApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
+import type { FilterField } from '../../shared';
 import type { FishingGearTypeResponseDTO, FishingGearTypeFilter, BaseFilter } from '../../../shared/types';
 
 export const FishingGearTypeList: React.FC = () => {
@@ -16,15 +17,23 @@ export const FishingGearTypeList: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FishingGearTypeResponseDTO | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', code: '' });
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+
+  const filterFields: FilterField[] = [
+    { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
+    { name: 'name', label: 'Name', type: 'text', placeholder: 'Search name' },
+    { name: 'code', label: 'Code', type: 'text', placeholder: 'Search code' },
+  ];
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (customFilters?: FishingGearTypeFilter) => {
     try {
       setLoading(true);
-      const filters: BaseFilter<FishingGearTypeFilter> = { page: 1, pageSize: 100, filters: {} };
+      const filters: BaseFilter<FishingGearTypeFilter> = { page: 1, pageSize: 100, filters: customFilters || {} };
       const data = await fishingGearTypeApi.getAll(filters);
       setItems(data);
     } catch (error) {
@@ -32,6 +41,30 @@ export const FishingGearTypeList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (name: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    const filters: FishingGearTypeFilter = {};
+    Object.keys(filterValues).forEach((key) => {
+      const value = filterValues[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        if (key === 'id') {
+          filters[key] = Number(value);
+        } else {
+          filters[key as keyof FishingGearTypeFilter] = value as any;
+        }
+      }
+    });
+    loadData(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({});
+    loadData({});
   };
 
   const handleAdd = () => {
@@ -90,6 +123,7 @@ export const FishingGearTypeList: React.FC = () => {
   };
 
   const columns: Column<FishingGearTypeResponseDTO>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'code', header: 'Code', width: '100px' },
     { key: 'name', header: 'Name' },
     { key: 'description', header: 'Description' },
@@ -110,6 +144,15 @@ export const FishingGearTypeList: React.FC = () => {
 
   return (
     <div>
+      <FilterPanel
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        isExpanded={isFilterExpanded}
+        onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
+      />
       {!canEdit(role, 'fishingGearTypes') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
           You have view-only access to this page.

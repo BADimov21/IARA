@@ -28,6 +28,10 @@ public class VesselCreateRequestDTO
     public decimal Width { get; set; }
 
     [Required]
+    [Range(0.01, 999.99)]
+    public decimal Draft { get; set; }
+
+    [Required]
     [Range(0.01, 99999999.99)]
     public decimal GrossTonnage { get; set; }
 

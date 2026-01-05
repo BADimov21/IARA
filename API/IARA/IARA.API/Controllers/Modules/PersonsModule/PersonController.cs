@@ -29,6 +29,7 @@ public class PersonController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public IActionResult GetAll([FromBody] BaseFilter<PersonFilter> filters)
     {
         return Ok(_personService.GetAll(filters));
@@ -37,6 +38,16 @@ public class PersonController : Controller
     [HttpGet]
     public IActionResult Get([FromQuery] int id)
     {
+        // Users can only access their own person record
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!User.IsInRole("Admin") && !string.IsNullOrEmpty(userId))
+        {
+            var userPersonId = _personService.GetPersonIdByUserId(userId);
+            if (userPersonId != id)
+            {
+                return Forbid();
+            }
+        }
         return Ok(_personService.Get(id));
     }
 

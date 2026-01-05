@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { batchLocationApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { BatchLocationFilter, BaseFilter } from '../../../shared/types';
+import type { FilterField } from '../../shared/FilterPanel/FilterPanel';
 
 interface BatchLocationItem {
   id: number;
@@ -22,20 +23,29 @@ export const BatchLocationList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BatchLocationItem | null>(null);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
   const [formData, setFormData] = useState({
     name: '',
     address: '',
     type: '',
   });
 
+  const filterFields: FilterField[] = [
+    { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
+    { name: 'name', label: 'Name', type: 'text', placeholder: 'Search name' },
+    { name: 'address', label: 'Address', type: 'text', placeholder: 'Search address' },
+    { name: 'type', label: 'Type', type: 'text', placeholder: 'Search type' },
+  ];
+
   useEffect(() => {
     loadLocations();
   }, []);
 
-  const loadLocations = async () => {
+  const loadLocations = async (customFilters?: BatchLocationFilter) => {
     try {
       setLoading(true);
-      const filters: BaseFilter<BatchLocationFilter> = { page: 1, pageSize: 100, filters: {} };
+      const filters: BaseFilter<BatchLocationFilter> = { page: 1, pageSize: 100, filters: customFilters || {} };
       const data = await batchLocationApi.getAll(filters);
       setLocations(data);
     } catch (error) {
@@ -43,6 +53,30 @@ export const BatchLocationList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (name: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    const filters: BatchLocationFilter = {};
+    Object.keys(filterValues).forEach((key) => {
+      const value = filterValues[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        if (key === 'id') {
+          filters[key] = Number(value);
+        } else {
+          filters[key as keyof BatchLocationFilter] = value as any;
+        }
+      }
+    });
+    loadLocations(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({});
+    loadLocations({});
   };
 
   const handleAdd = () => {
@@ -108,6 +142,7 @@ export const BatchLocationList: React.FC = () => {
   };
 
   const columns: Column<BatchLocationItem>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'name', header: 'Name' },
     { key: 'type', header: 'Type' },
     { key: 'address', header: 'Address' },
@@ -133,6 +168,15 @@ export const BatchLocationList: React.FC = () => {
           You have view-only access to this page.
         </div>
       )}
+      <FilterPanel
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        isExpanded={isFilterExpanded}
+        onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
+      />
       <Card
         title="Batch Locations"
         subtitle="Manage storage and processing locations"

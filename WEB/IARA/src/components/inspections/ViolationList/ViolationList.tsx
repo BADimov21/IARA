@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { violationApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
+import type { FilterField } from '../../shared';
 import type { ViolationFilter, BaseFilter } from '../../../shared/types';
 
 interface ViolationItem {
@@ -13,6 +14,8 @@ interface ViolationItem {
   violationType?: string;
   description?: string;
   fineAmount?: number;
+  isPaid?: boolean;
+  paidDate?: string;
 }
 
 export const ViolationList: React.FC = () => {
@@ -23,6 +26,8 @@ export const ViolationList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ViolationItem | null>(null);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
   const [formData, setFormData] = useState({
     inspectionId: '',
     violationType: '',
@@ -30,14 +35,22 @@ export const ViolationList: React.FC = () => {
     fineAmount: '',
   });
 
+  const filterFields: FilterField[] = [
+    { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
+    { name: 'inspectionId', label: 'Inspection ID', type: 'number', placeholder: 'Inspection ID' },
+    { name: 'description', label: 'Description', type: 'text', placeholder: 'Search description' },
+    { name: 'minFineAmount', label: 'Min Fine', type: 'number', placeholder: 'Min fine amount' },
+    { name: 'maxFineAmount', label: 'Max Fine', type: 'number', placeholder: 'Max fine amount' },
+  ];
+
   useEffect(() => {
     loadViolations();
   }, []);
 
-  const loadViolations = async () => {
+  const loadViolations = async (customFilters?: ViolationFilter) => {
     try {
       setLoading(true);
-      const filters: BaseFilter<ViolationFilter> = { page: 1, pageSize: 100, filters: {} };
+      const filters: BaseFilter<ViolationFilter> = { page: 1, pageSize: 100, filters: customFilters || {} };
       const data = await violationApi.getAll(filters);
       setViolations(data);
     } catch (error) {
@@ -45,6 +58,30 @@ export const ViolationList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (name: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    const filters: ViolationFilter = {};
+    Object.keys(filterValues).forEach((key) => {
+      const value = filterValues[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        if (key.includes('Fine') || key === 'id' || key === 'inspectionId') {
+          filters[key as keyof ViolationFilter] = Number(value) as any;
+        } else {
+          filters[key as keyof ViolationFilter] = value as any;
+        }
+      }
+    });
+    loadViolations(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({});
+    loadViolations({});
   };
 
   const handleAdd = () => {
@@ -88,6 +125,28 @@ export const ViolationList: React.FC = () => {
     }
   };
 
+  const handleMarkAsPaid = async (id: number) => {
+    if (role !== 'Admin') return;
+    
+    const confirmed = await confirm({
+      title: 'Mark Violation as Paid',
+      message: 'Confirm that the fine has been paid by the vessel owner?',
+      confirmText: 'Mark as Paid',
+      variant: 'primary',
+    });
+    
+    if (!confirmed) return;
+
+    try {
+      await violationApi.edit({ id, isPaid: true });
+      toast.success('Violation marked as paid');
+      await loadViolations();
+    } catch (error) {
+      console.error('Failed to update payment status:', error);
+      toast.error('Failed to update payment status');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEdit(role, 'violations')) return;
@@ -114,15 +173,40 @@ export const ViolationList: React.FC = () => {
   };
 
   const columns: Column<ViolationItem>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'violationType', header: 'Type' },
     { key: 'description', header: 'Description' },
     { key: 'fineAmount', header: 'Fine Amount', render: (item) => item.fineAmount ? `${item.fineAmount} BGN` : '-' },
     {
+      key: 'isPaid',
+      header: 'Payment Status',
+      render: (item) => (
+        <span style={{
+          padding: '0.25rem 0.75rem',
+          borderRadius: '9999px',
+          fontSize: '0.875rem',
+          fontWeight: '500',
+          backgroundColor: item.isPaid ? 'rgba(34, 197, 94, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+          color: item.isPaid ? '#15803d' : '#a16207',
+        }}>
+          {item.isPaid ? '✓ Paid' : '⏳ Unpaid'}
+        </span>
+      ),
+    },
+    {
+      key: 'paidDate',
+      header: 'Paid Date',
+      render: (item) => item.paidDate ? new Date(item.paidDate).toLocaleDateString() : '-',
+    },
+    {
       key: 'actions',
       header: 'Actions',
-      width: '180px',
+      width: '240px',
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {!item.isPaid && role === 'Admin' && (
+            <Button size="small" variant="success" onClick={() => handleMarkAsPaid(item.id)}>Mark as Paid</Button>
+          )}
           {canEdit(role, 'violations') && <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>}
           {canDelete(role, 'violations') && <Button size="small" variant="danger" onClick={() => handleDelete(String(item.id))}>Delete</Button>}
         </div>
@@ -139,6 +223,17 @@ export const ViolationList: React.FC = () => {
           You have view-only access to this page.
         </div>
       )}
+
+      <FilterPanel
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        isExpanded={isFilterExpanded}
+        onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
+      />
+
       <Card
         title="Violations"
         subtitle="Track fishing regulation violations"

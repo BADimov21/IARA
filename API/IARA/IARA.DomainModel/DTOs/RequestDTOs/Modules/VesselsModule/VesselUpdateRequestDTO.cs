@@ -22,6 +22,9 @@ public class VesselUpdateRequestDTO
     [Range(0.01, 999.99)]
     public decimal? Width { get; set; }
 
+    [Range(0.01, 999.99)]
+    public decimal? Draft { get; set; }
+
     [Range(0.01, 99999999.99)]
     public decimal? GrossTonnage { get; set; }
 

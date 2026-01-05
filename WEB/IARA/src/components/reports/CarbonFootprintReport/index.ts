@@ -1,0 +1,1 @@
+export { CarbonFootprintReport } from './CarbonFootprintReport';

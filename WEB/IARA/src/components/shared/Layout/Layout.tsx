@@ -80,8 +80,18 @@ const getNavigationItems = (role: UserRole): NavItem[] => {
       label: 'Recreational Fishing',
       path: '/recreational',
       children: [
-        { label: 'Ticket Purchases', path: '/recreational/tickets' },
-        { label: 'Catches', path: '/recreational/catches' },
+        { label: 'All Ticket Purchases', path: '/recreational/tickets' },
+        { label: 'All Recreational Catches', path: '/recreational/catches' },
+      ],
+    },
+    {
+      label: 'Reports',
+      path: '/reports',
+      children: [
+        { label: 'Expiring Permits', path: '/reports/expiring-permits' },
+        { label: 'Fishermen Ranking', path: '/reports/fishermen-ranking' },
+        { label: 'Vessel Statistics', path: '/reports/vessel-statistics' },
+        { label: 'Carbon Footprint', path: '/reports/carbon-footprint' },
       ],
     },
     { label: 'Users', path: '/users', adminOnly: true },
@@ -112,13 +122,75 @@ const getNavigationItems = (role: UserRole): NavItem[] => {
       children: [
         { label: 'Fish Species', path: '/nomenclatures/fish-species' },
         { label: 'Vessels', path: '/registry/vessels' },
-        { label: 'Persons', path: '/registry/persons' },
         { label: 'Inspections', path: '/inspections' },
+      ],
+    },
+    {
+      label: 'Reports',
+      path: '/reports',
+      children: [
+        { label: 'Expiring Permits', path: '/reports/expiring-permits' },
+        { label: 'Fishermen Ranking', path: '/reports/fishermen-ranking' },
+        { label: 'Vessel Statistics', path: '/reports/vessel-statistics' },
+        { label: 'Carbon Footprint', path: '/reports/carbon-footprint' },
       ],
     },
     { label: '📚 Help & Guide', path: '/help' },
   ];
 
+  const inspectorItems: NavItem[] = [
+    { label: 'Dashboard', path: '/dashboard' },
+    {
+      label: '🔍 Inspections',
+      path: '/inspections',
+      children: [
+        { label: 'Register Inspection', path: '/inspections' },
+        { label: 'Violations & Fines', path: '/inspections/violations' },
+        { label: 'View Inspectors', path: '/inspections/inspectors' },
+      ],
+    },
+    {
+      label: '🚢 Check Vessels',
+      path: '/registry/vessels',
+    },
+    {
+      label: '📦 Check Batches',
+      path: '/batches',
+      children: [
+        { label: 'Landings', path: '/batches/landings' },
+        { label: 'Fish Batches', path: '/batches/fish-batches' },
+        { label: 'Batch Locations', path: '/batches/locations' },
+      ],
+    },
+    {
+      label: '🎟️ Check Tickets',
+      path: '/recreational/tickets',
+    },
+    {
+      label: 'View Information',
+      path: '/view',
+      children: [
+        { label: 'Fish Species', path: '/nomenclatures/fish-species' },
+        { label: 'Fishing Permits', path: '/fishing/permits' },
+        { label: 'Fishing Operations', path: '/fishing/operations' },
+        { label: 'Persons', path: '/registry/persons' },
+      ],
+    },
+    {
+      label: 'Reports',
+      path: '/reports',
+      children: [
+        { label: 'Expiring Permits', path: '/reports/expiring-permits' },
+        { label: 'Vessel Statistics', path: '/reports/vessel-statistics' },
+        { label: 'Carbon Footprint', path: '/reports/carbon-footprint' },
+      ],
+    },
+  ];
+
+  if (role === 'Inspector') {
+    return inspectorItems;
+  }
+  
   return isAdmin(role) ? adminItems : userItems;
 };
 

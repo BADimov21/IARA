@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { vesselApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
+import type { FilterField } from '../../shared';
 import type { VesselResponseDTO, VesselFilter, BaseFilter } from '../../../shared/types';
 
 export const VesselList: React.FC = () => {
@@ -15,12 +16,15 @@ export const VesselList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<VesselResponseDTO | null>(null);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
   const [formData, setFormData] = useState({
     vesselName: '',
     internationalNumber: '',
     callSign: '',
     length: '',
     width: '',
+    draft: '',
     grossTonnage: '',
     enginePower: '',
     engineTypeId: '',
@@ -28,14 +32,23 @@ export const VesselList: React.FC = () => {
     captainId: '',
   });
 
+  const filterFields: FilterField[] = [
+    { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
+    { name: 'vesselName', label: 'Vessel Name', type: 'text', placeholder: 'Search vessel name' },
+    { name: 'internationalNumber', label: 'Int. Number', type: 'text', placeholder: 'Search int. number' },
+    { name: 'callSign', label: 'Call Sign', type: 'text', placeholder: 'Search call sign' },
+    { name: 'minLength', label: 'Min Length', type: 'number', placeholder: 'Min length (m)' },
+    { name: 'maxLength', label: 'Max Length', type: 'number', placeholder: 'Max length (m)' },
+  ];
+
   useEffect(() => {
     loadVessels();
   }, []);
 
-  const loadVessels = async () => {
+  const loadVessels = async (customFilters?: VesselFilter) => {
     try {
       setLoading(true);
-      const filters: BaseFilter<VesselFilter> = { page: 1, pageSize: 100, filters: {} };
+      const filters: BaseFilter<VesselFilter> = { page: 1, pageSize: 100, filters: customFilters || {} };
       const data = await vesselApi.getAll(filters);
       setVessels(data);
     } catch (error) {
@@ -45,10 +58,34 @@ export const VesselList: React.FC = () => {
     }
   };
 
+  const handleFilterChange = (name: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    const filters: VesselFilter = {};
+    Object.keys(filterValues).forEach((key) => {
+      const value = filterValues[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        if (key.includes('min') || key.includes('max') || key === 'id') {
+          filters[key as keyof VesselFilter] = Number(value) as any;
+        } else {
+          filters[key as keyof VesselFilter] = value as any;
+        }
+      }
+    });
+    loadVessels(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({});
+    loadVessels({});
+  };
+
   const handleAdd = () => {
     if (!canCreate(role, 'vessels')) return;
     setEditingItem(null);
-    setFormData({ vesselName: '', internationalNumber: '', callSign: '', length: '', width: '', grossTonnage: '', enginePower: '', engineTypeId: '', ownerId: '', captainId: '' });
+    setFormData({ vesselName: '', internationalNumber: '', callSign: '', length: '', width: '', draft: '', grossTonnage: '', enginePower: '', engineTypeId: '', ownerId: '', captainId: '' });
     setIsModalOpen(true);
   };
 
@@ -61,6 +98,7 @@ export const VesselList: React.FC = () => {
       callSign: item.callSign || '',
       length: item.length?.toString() || '',
       width: item.width?.toString() || '',
+      draft: item.draft?.toString() || '',
       grossTonnage: item.grossTonnage?.toString() || '',
       enginePower: item.enginePower?.toString() || '',
       engineTypeId: item.engineTypeId?.toString() || '',
@@ -102,6 +140,7 @@ export const VesselList: React.FC = () => {
         vesselName: formData.vesselName,
         length: formData.length ? parseFloat(formData.length) : 0,
         width: formData.width ? parseFloat(formData.width) : 0,
+        draft: formData.draft ? parseFloat(formData.draft) : 0,
         grossTonnage: formData.grossTonnage ? parseFloat(formData.grossTonnage) : 0,
         enginePower: formData.enginePower ? parseFloat(formData.enginePower) : 0,
         engineTypeId: formData.engineTypeId ? parseInt(formData.engineTypeId) : 1,
@@ -124,6 +163,7 @@ export const VesselList: React.FC = () => {
   };
 
   const columns: Column<VesselResponseDTO>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'vesselName', header: 'Vessel Name' },
     { key: 'internationalNumber', header: 'International Number' },
     { key: 'callSign', header: 'Call Sign' },
@@ -151,6 +191,17 @@ export const VesselList: React.FC = () => {
           You have view-only access to this page.
         </div>
       )}
+
+      <FilterPanel
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        isExpanded={isFilterExpanded}
+        onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
+      />
+
       <Card
         title="Vessels"
         subtitle="Manage fishing vessel registry"
@@ -170,8 +221,9 @@ export const VesselList: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
               <Input label="Length (m)" type="number" step="0.01" value={formData.length} onChange={(e) => setFormData({ ...formData, length: e.target.value })} fullWidth />
               <Input label="Width (m)" type="number" step="0.01" value={formData.width} onChange={(e) => setFormData({ ...formData, width: e.target.value })} fullWidth />
-              <Input label="Gross Tonnage" type="number" step="0.01" value={formData.grossTonnage} onChange={(e) => setFormData({ ...formData, grossTonnage: e.target.value })} fullWidth />
+              <Input label="Draft (m)" type="number" step="0.01" value={formData.draft} onChange={(e) => setFormData({ ...formData, draft: e.target.value })} fullWidth />
             </div>
+            <Input label="Gross Tonnage" type="number" step="0.01" value={formData.grossTonnage} onChange={(e) => setFormData({ ...formData, grossTonnage: e.target.value })} fullWidth />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
               <Input label="Engine Power (kW)" type="number" step="0.01" value={formData.enginePower} onChange={(e) => setFormData({ ...formData, enginePower: e.target.value })} fullWidth />
               <Input label="Engine Type ID" type="number" value={formData.engineTypeId} onChange={(e) => setFormData({ ...formData, engineTypeId: e.target.value })} placeholder="1" fullWidth />

@@ -47,6 +47,52 @@ public class TicketPurchaseService : BaseService, ITicketPurchaseService
 
     public int Add(TicketPurchaseCreateRequestDTO dto)
     {
+        // Calculate the correct price based on person's age and TELK status
+        var person = Db.Persons.Find(dto.PersonId);
+        if (person == null)
+        {
+            throw new InvalidOperationException("Person not found");
+        }
+
+        var ticketType = Db.TicketTypes.Find(dto.TicketTypeId);
+        if (ticketType == null)
+        {
+            throw new InvalidOperationException("Ticket type not found");
+        }
+
+        decimal calculatedPrice = 0;
+
+        // Check if person has valid TELK decision for disabled persons
+        var hasTELKDecision = dto.TELKDecisionId.HasValue && 
+            Db.TELKDecisions.Any(t => t.Id == dto.TELKDecisionId.Value && 
+                                     t.PersonId == dto.PersonId && 
+                                     t.ValidUntil >= DateOnly.FromDateTime(DateTime.Today));
+
+        if (hasTELKDecision && ticketType.IsFreeForDisabled)
+        {
+            // Free ticket for disabled persons with valid TELK decision
+            calculatedPrice = 0;
+        }
+        else
+        {
+            // Calculate age from EGN (Bulgarian personal ID)
+            int age = CalculateAgeFromEGN(person.EGN);
+
+            // Apply age-based pricing
+            if (age < 14)
+            {
+                calculatedPrice = ticketType.PriceUnder14;
+            }
+            else if (age >= 63) // Retirement age in Bulgaria
+            {
+                calculatedPrice = ticketType.PricePensioner;
+            }
+            else
+            {
+                calculatedPrice = ticketType.PriceAdult;
+            }
+        }
+
         var ticketPurchase = new TicketPurchase
         {
             TicketNumber = GenerateTicketNumber(),
@@ -55,7 +101,7 @@ public class TicketPurchaseService : BaseService, ITicketPurchaseService
             PurchaseDate = dto.PurchaseDate,
             ValidFrom = dto.ValidFrom,
             ValidUntil = dto.ValidUntil,
-            PricePaid = dto.PricePaid,
+            PricePaid = calculatedPrice, // Use calculated price instead of dto.PricePaid
             TELKDecisionId = dto.TELKDecisionId
         };
 
@@ -63,6 +109,43 @@ public class TicketPurchaseService : BaseService, ITicketPurchaseService
         Db.SaveChanges();
 
         return ticketPurchase.Id;
+    }
+
+    private int CalculateAgeFromEGN(string egn)
+    {
+        if (string.IsNullOrEmpty(egn) || egn.Length != 10)
+        {
+            throw new ArgumentException("Invalid EGN format");
+        }
+
+        // Parse birth date from EGN
+        // Format: YYMMDDXXXX
+        int year = int.Parse(egn.Substring(0, 2));
+        int month = int.Parse(egn.Substring(2, 2));
+        int day = int.Parse(egn.Substring(4, 2));
+
+        // Determine century from month
+        if (month > 40) // Born in 2000-2099
+        {
+            year += 2000;
+            month -= 40;
+        }
+        else if (month > 20) // Born in 1800-1899
+        {
+            year += 1800;
+            month -= 20;
+        }
+        else // Born in 1900-1999
+        {
+            year += 1900;
+        }
+
+        var birthDate = new DateTime(year, month, day);
+        var today = DateTime.Today;
+        int age = today.Year - birthDate.Year;
+        if (birthDate.Date > today.AddYears(-age)) age--;
+
+        return age;
     }
     
     private string GenerateTicketNumber()

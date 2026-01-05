@@ -3,7 +3,7 @@
  * Defines permissions for each role and module
  */
 
-export type UserRole = 'Admin' | 'User';
+export type UserRole = 'Admin' | 'User' | 'Inspector';
 
 export type Permission = 'view' | 'create' | 'edit' | 'delete';
 
@@ -61,8 +61,8 @@ const rolePermissions: Record<UserRole, Record<Module, Permission[]>> = {
     ticketPurchases: ['view', 'create', 'edit', 'delete'],
     recreationalCatches: ['view', 'create', 'edit', 'delete'],
   },
-  User: {
-    // Regular users have limited access
+  Inspector: {
+    // Inspectors can register inspections, issue fines, and check vessels/stores
     dashboard: ['view'],
     users: [], // No access to user management
     
@@ -72,7 +72,44 @@ const rolePermissions: Record<UserRole, Record<Module, Permission[]>> = {
     fishingGearTypes: ['view'],
     ticketTypes: ['view'],
     
-    // Fishing - View only for most, create for operations and catches
+    // Fishing - View for verification
+    fishingTrips: ['view'],
+    fishingOperations: ['view'],
+    catches: ['view'],
+    fishingPermits: ['view'],
+    fishingGear: ['view'],
+    
+    // Batches - View and check stores/trucks
+    landings: ['view'],
+    fishBatches: ['view'],
+    batchLocations: ['view'],
+    
+    // Inspections - Full access to register inspections and issue fines
+    inspections: ['view', 'create', 'edit', 'delete'],
+    inspectors: ['view'], // Can view other inspectors
+    violations: ['view', 'create', 'edit', 'delete'], // Can issue fines and penalties
+    
+    // Registry - View for verification
+    persons: ['view'],
+    vessels: ['view'],
+    telkDecisions: ['view'],
+    
+    // Recreational Fishing - View to check tickets and catches
+    ticketPurchases: ['view'],
+    recreationalCatches: ['view'],
+  },
+  User: {
+    // Regular users (fishermen) have limited access
+    dashboard: ['view'],
+    users: [], // No access to user management
+    
+    // Nomenclatures - View only
+    fishSpecies: ['view'],
+    engineTypes: ['view'],
+    fishingGearTypes: ['view'],
+    ticketTypes: ['view'],
+    
+    // Fishing - View and create for their own data
     fishingTrips: ['view'],
     fishingOperations: ['view', 'create'], // Can record their own operations
     catches: ['view', 'create'], // Can record their own catches

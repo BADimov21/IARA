@@ -9,6 +9,7 @@ export interface VesselCreateRequestDTO {
   vesselName: string;
   length: number;
   width: number;
+  draft: number;
   grossTonnage: number;
   enginePower: number;
   engineTypeId: number;
@@ -22,6 +23,7 @@ export interface VesselUpdateRequestDTO {
   vesselName?: string;
   length?: number;
   width?: number;
+  draft?: number;
   grossTonnage?: number;
   enginePower?: number;
   engineTypeId?: number;
@@ -54,6 +56,7 @@ export interface VesselResponseDTO {
   vesselName: string;
   length: number;
   width: number;
+  draft: number;
   grossTonnage: number;
   enginePower: number;
   engineTypeId: number;

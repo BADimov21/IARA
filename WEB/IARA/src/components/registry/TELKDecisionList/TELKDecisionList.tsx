@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { telkDecisionApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { TELKDecisionFilter, BaseFilter } from '../../../shared/types';
+import type { FilterField } from '../../shared/FilterPanel/FilterPanel';
 
 interface TELKDecisionItem {
   id: number;
@@ -23,6 +24,8 @@ export const TELKDecisionList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<TELKDecisionItem | null>(null);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
   const [formData, setFormData] = useState({
     decisionNumber: '',
     decisionDate: '',
@@ -30,14 +33,22 @@ export const TELKDecisionList: React.FC = () => {
     description: '',
   });
 
+  const filterFields: FilterField[] = [
+    { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
+    { name: 'decisionNumber', label: 'Decision Number', type: 'text', placeholder: 'Search number' },
+    { name: 'subject', label: 'Subject', type: 'text', placeholder: 'Search subject' },
+    { name: 'decisionDateFrom', label: 'Date From', type: 'date' },
+    { name: 'decisionDateTo', label: 'Date To', type: 'date' },
+  ];
+
   useEffect(() => {
     loadDecisions();
   }, []);
 
-  const loadDecisions = async () => {
+  const loadDecisions = async (customFilters?: TELKDecisionFilter) => {
     try {
       setLoading(true);
-      const filters: BaseFilter<TELKDecisionFilter> = { page: 1, pageSize: 100, filters: {} };
+      const filters: BaseFilter<TELKDecisionFilter> = { page: 1, pageSize: 100, filters: customFilters || {} };
       const data = await telkDecisionApi.getAll(filters);
       setDecisions(data);
     } catch (error) {
@@ -45,6 +56,30 @@ export const TELKDecisionList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (name: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    const filters: TELKDecisionFilter = {};
+    Object.keys(filterValues).forEach((key) => {
+      const value = filterValues[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        if (key === 'id') {
+          filters[key] = Number(value);
+        } else {
+          filters[key as keyof TELKDecisionFilter] = value as any;
+        }
+      }
+    });
+    loadDecisions(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({});
+    loadDecisions({});
   };
 
   const handleAdd = () => {
@@ -115,6 +150,7 @@ export const TELKDecisionList: React.FC = () => {
   };
 
   const columns: Column<TELKDecisionItem>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'decisionNumber', header: 'Decision Number' },
     { key: 'decisionDate', header: 'Date', render: (item) => item.decisionDate ? new Date(item.decisionDate).toLocaleDateString() : '-' },
     { key: 'subject', header: 'Subject' },
@@ -140,6 +176,15 @@ export const TELKDecisionList: React.FC = () => {
           You have view-only access to this page.
         </div>
       )}
+      <FilterPanel
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        isExpanded={isFilterExpanded}
+        onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
+      />
       <Card
         title="TELK Decisions"
         subtitle="Manage regulatory committee decisions"

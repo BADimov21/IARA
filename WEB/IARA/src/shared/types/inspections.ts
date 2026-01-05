@@ -37,6 +37,8 @@ export interface ViolationUpdateRequestDTO {
   inspectionId?: number;
   description?: string;
   fineAmount?: number;
+  isPaid?: boolean;
+  paidDate?: string;
 }
 
 export interface ViolationFilter {

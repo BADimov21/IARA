@@ -1,0 +1,198 @@
+.carbon-footprint-report {
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.report-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.report-header h1 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.report-description {
+  color: #7f8c8d;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.year-selector {
+  margin-top: 1rem;
+}
+
+.year-selector label {
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.year-selector select {
+  padding: 0.5rem 1rem;
+  border: 2px solid #27ae60;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.info-box {
+  background: #e8f5e9;
+  border-left: 4px solid #27ae60;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.info-box h3 {
+  margin: 0 0 0.5rem 0;
+  color: #27ae60;
+}
+
+.info-box p {
+  margin: 0;
+  color: #2e7d32;
+  line-height: 1.6;
+}
+
+.efficiency-legend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.legend-item .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend-item.excellent .dot {
+  background-color: #27ae60;
+}
+
+.legend-item.good .dot {
+  background-color: #3498db;
+}
+
+.legend-item.average .dot {
+  background-color: #f39c12;
+}
+
+.legend-item.poor .dot {
+  background-color: #e74c3c;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.report-table thead {
+  background: #27ae60;
+  color: white;
+}
+
+.report-table th {
+  padding: 1rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.report-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #ecf0f1;
+  font-size: 0.9rem;
+}
+
+.report-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.report-table tbody tr.highlight {
+  background-color: #e8f5e9 !important;
+}
+
+.rank-cell {
+  font-size: 1.3rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.vessel-name {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.footprint-value {
+  font-weight: 600;
+  color: #27ae60;
+  font-size: 1.05rem;
+}
+
+.efficiency-badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-align: center;
+  display: inline-block;
+}
+
+.efficiency-badge.excellent {
+  background-color: #27ae60;
+  color: white;
+}
+
+.efficiency-badge.good {
+  background-color: #3498db;
+  color: white;
+}
+
+.efficiency-badge.average {
+  background-color: #f39c12;
+  color: white;
+}
+
+.efficiency-badge.poor {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.no-data {
+  text-align: center;
+  padding: 3rem;
+  background: #ecf0f1;
+  border-radius: 12px;
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: #7f8c8d;
+}

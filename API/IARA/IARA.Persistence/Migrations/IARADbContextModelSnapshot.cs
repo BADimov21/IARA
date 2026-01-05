@@ -54,7 +54,7 @@ namespace IARA.Persistence.Migrations
 
                     b.HasIndex(new[] { "BatchId" }, "IX_BatchLocations_BatchId");
 
-                    b.ToTable("BatchLocations", (string)null);
+                    b.ToTable("BatchLocations");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.Catch", b =>
@@ -84,7 +84,7 @@ namespace IARA.Persistence.Migrations
 
                     b.HasIndex(new[] { "OperationId" }, "IX_Catches_OperationId");
 
-                    b.ToTable("Catches", (string)null);
+                    b.ToTable("Catches");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.EngineType", b =>
@@ -114,7 +114,7 @@ namespace IARA.Persistence.Migrations
                     b.HasIndex(new[] { "TypeName" }, "UQ__EngineTy__D4E7DFA885E27956")
                         .IsUnique();
 
-                    b.ToTable("EngineTypes", (string)null);
+                    b.ToTable("EngineTypes");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.FishBatch", b =>
@@ -151,7 +151,7 @@ namespace IARA.Persistence.Migrations
                     b.HasIndex(new[] { "BatchCode" }, "UQ__FishBatc__B22ADA8E3830D45A")
                         .IsUnique();
 
-                    b.ToTable("FishBatches", (string)null);
+                    b.ToTable("FishBatches");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.FishSpecy", b =>
@@ -173,7 +173,7 @@ namespace IARA.Persistence.Migrations
                     b.HasIndex(new[] { "SpeciesName" }, "UQ__FishSpec__304D4C0DADCFB3B4")
                         .IsUnique();
 
-                    b.ToTable("FishSpecies", (string)null);
+                    b.ToTable("FishSpecies");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.FishingGear", b =>
@@ -198,7 +198,7 @@ namespace IARA.Persistence.Migrations
 
                     b.HasIndex("GearTypeId");
 
-                    b.ToTable("FishingGears", (string)null);
+                    b.ToTable("FishingGears");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.FishingGearType", b =>
@@ -220,7 +220,7 @@ namespace IARA.Persistence.Migrations
                     b.HasIndex(new[] { "TypeName" }, "UQ__FishingG__D4E7DFA8723FC1DD")
                         .IsUnique();
 
-                    b.ToTable("FishingGearTypes", (string)null);
+                    b.ToTable("FishingGearTypes");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.FishingOperation", b =>
@@ -254,7 +254,7 @@ namespace IARA.Persistence.Migrations
 
                     b.HasIndex(new[] { "TripId" }, "IX_FishingOps_TripId");
 
-                    b.ToTable("FishingOperations", (string)null);
+                    b.ToTable("FishingOperations");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.FishingPermit", b =>
@@ -295,7 +295,7 @@ namespace IARA.Persistence.Migrations
                     b.HasIndex(new[] { "PermitNumber" }, "UQ__FishingP__DA3C94EED997A6A2")
                         .IsUnique();
 
-                    b.ToTable("FishingPermits", (string)null);
+                    b.ToTable("FishingPermits");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.FishingTrip", b =>
@@ -341,7 +341,7 @@ namespace IARA.Persistence.Migrations
 
                     b.HasIndex(new[] { "VesselId" }, "IX_FishingTrips_VesselId");
 
-                    b.ToTable("FishingTrips", (string)null);
+                    b.ToTable("FishingTrips");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.Inspection", b =>
@@ -388,7 +388,7 @@ namespace IARA.Persistence.Migrations
 
                     b.HasIndex(new[] { "InspectorId" }, "IX_Inspections_InspectorId");
 
-                    b.ToTable("Inspections", (string)null);
+                    b.ToTable("Inspections");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.Inspector", b =>
@@ -416,7 +416,7 @@ namespace IARA.Persistence.Migrations
                     b.HasIndex(new[] { "BadgeNumber" }, "UQ__Inspecto__D110FD567045C85D")
                         .IsUnique();
 
-                    b.ToTable("Inspectors", (string)null);
+                    b.ToTable("Inspectors");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.Landing", b =>
@@ -443,7 +443,7 @@ namespace IARA.Persistence.Migrations
 
                     b.HasIndex(new[] { "TripId" }, "IX_Landings_TripId");
 
-                    b.ToTable("Landings", (string)null);
+                    b.ToTable("Landings");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.Person", b =>
@@ -496,7 +496,7 @@ namespace IARA.Persistence.Migrations
                         .IsUnique()
                         .HasFilter("[EGN] IS NOT NULL");
 
-                    b.ToTable("Persons", (string)null);
+                    b.ToTable("Persons");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.RecreationalCatch", b =>
@@ -540,7 +540,7 @@ namespace IARA.Persistence.Migrations
 
                     b.HasIndex(new[] { "PersonId" }, "IX_RecCatches_PersonId");
 
-                    b.ToTable("RecreationalCatches", (string)null);
+                    b.ToTable("RecreationalCatches");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.TELKDecision", b =>
@@ -573,7 +573,7 @@ namespace IARA.Persistence.Migrations
                     b.HasIndex(new[] { "DecisionNumber" }, "UQ__TELKDeci__BB11758214FDB233")
                         .IsUnique();
 
-                    b.ToTable("TELKDecisions", (string)null);
+                    b.ToTable("TELKDecisions");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.TicketPurchase", b =>
@@ -624,7 +624,7 @@ namespace IARA.Persistence.Migrations
                     b.HasIndex(new[] { "TicketNumber" }, "UQ__TicketPu__CBED06DA55E2E47D")
                         .IsUnique();
 
-                    b.ToTable("TicketPurchases", (string)null);
+                    b.ToTable("TicketPurchases");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.TicketType", b =>
@@ -661,7 +661,7 @@ namespace IARA.Persistence.Migrations
                     b.HasIndex(new[] { "TypeName" }, "UQ__TicketTy__D4E7DFA8A7EDAD5F")
                         .IsUnique();
 
-                    b.ToTable("TicketTypes", (string)null);
+                    b.ToTable("TicketTypes");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.User", b =>
@@ -764,6 +764,9 @@ namespace IARA.Persistence.Migrations
                     b.Property<int>("CaptainId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("Draft")
+                        .HasColumnType("decimal(6, 2)");
+
                     b.Property<decimal>("EnginePower")
                         .HasColumnType("decimal(8, 2)");
 
@@ -806,7 +809,7 @@ namespace IARA.Persistence.Migrations
                     b.HasIndex(new[] { "InternationalNumber" }, "UQ__Vessels__0D0EED16EF482DAE")
                         .IsUnique();
 
-                    b.ToTable("Vessels", (string)null);
+                    b.ToTable("Vessels");
                 });
 
             modelBuilder.Entity("IARA.Persistence.Data.Entities.Violation", b =>
@@ -828,12 +831,18 @@ namespace IARA.Persistence.Migrations
                     b.Property<int>("InspectionId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("PaidDate")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id")
                         .HasName("PK__Violatio__3214EC07469064E3");
 
                     b.HasIndex(new[] { "InspectionId" }, "IX_Violations_InspectionId");
 
-                    b.ToTable("Violations", (string)null);
+                    b.ToTable("Violations");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

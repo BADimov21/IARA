@@ -14,6 +14,7 @@ public class VesselResponseDTO
     public string VesselName { get; set; } = null!;
     public decimal Length { get; set; }
     public decimal Width { get; set; }
+    public decimal Draft { get; set; }
     public decimal GrossTonnage { get; set; }
     public decimal EnginePower { get; set; }
     public int EngineTypeId { get; set; }

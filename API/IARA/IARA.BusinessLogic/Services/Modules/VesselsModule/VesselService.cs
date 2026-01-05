@@ -54,6 +54,7 @@ public class VesselService : BaseService, IVesselService
             VesselName = dto.VesselName,
             Length = dto.Length,
             Width = dto.Width,
+            Draft = dto.Draft,
             GrossTonnage = dto.GrossTonnage,
             EnginePower = dto.EnginePower,
             EngineTypeId = dto.EngineTypeId,
@@ -75,6 +76,7 @@ public class VesselService : BaseService, IVesselService
         if (dto.VesselName != null) vessel.VesselName = dto.VesselName;
         if (dto.Length != null) vessel.Length = dto.Length.Value;
         if (dto.Width != null) vessel.Width = dto.Width.Value;
+        if (dto.Draft != null) vessel.Draft = dto.Draft.Value;
         if (dto.GrossTonnage != null) vessel.GrossTonnage = dto.GrossTonnage.Value;
         if (dto.EnginePower != null) vessel.EnginePower = dto.EnginePower.Value;
         if (dto.EngineTypeId != null) vessel.EngineTypeId = dto.EngineTypeId.Value;
@@ -114,6 +116,7 @@ public class VesselService : BaseService, IVesselService
                     VesselName = vessel.VesselName,
                     Length = vessel.Length,
                     Width = vessel.Width,
+                    Draft = vessel.Draft,
                     GrossTonnage = vessel.GrossTonnage,
                     EnginePower = vessel.EnginePower,
                     EngineTypeId = vessel.EngineTypeId,

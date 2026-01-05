@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { landingApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { LandingFilter, BaseFilter } from '../../../shared/types';
+import type { FilterField } from '../../shared/FilterPanel/FilterPanel';
 
 interface LandingItem {
   id: number;
@@ -23,6 +24,8 @@ export const LandingList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<LandingItem | null>(null);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
   const [formData, setFormData] = useState({
     fishingTripId: '',
     landingDate: '',
@@ -30,14 +33,24 @@ export const LandingList: React.FC = () => {
     totalWeight: '',
   });
 
+  const filterFields: FilterField[] = [
+    { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
+    { name: 'fishingTripId', label: 'Trip ID', type: 'number', placeholder: 'Search by trip' },
+    { name: 'landingDateFrom', label: 'Landing Date From', type: 'date' },
+    { name: 'landingDateTo', label: 'Landing Date To', type: 'date' },
+    { name: 'port', label: 'Port', type: 'text', placeholder: 'Search port' },
+    { name: 'minTotalWeight', label: 'Min Weight (kg)', type: 'number', placeholder: 'Min weight' },
+    { name: 'maxTotalWeight', label: 'Max Weight (kg)', type: 'number', placeholder: 'Max weight' },
+  ];
+
   useEffect(() => {
     loadLandings();
   }, []);
 
-  const loadLandings = async () => {
+  const loadLandings = async (customFilters?: LandingFilter) => {
     try {
       setLoading(true);
-      const filters: BaseFilter<LandingFilter> = { page: 1, pageSize: 100, filters: {} };
+      const filters: BaseFilter<LandingFilter> = { page: 1, pageSize: 100, filters: customFilters || {} };
       const data = await landingApi.getAll(filters);
       setLandings(data);
     } catch (error) {
@@ -45,6 +58,26 @@ export const LandingList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (name: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    const filters: LandingFilter = {};
+    Object.keys(filterValues).forEach((key) => {
+      const value = filterValues[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        (filters as any)[key] = ['id', 'fishingTripId', 'minTotalWeight', 'maxTotalWeight'].includes(key) ? Number(value) : value;
+      }
+    });
+    loadLandings(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({});
+    loadLandings({});
   };
 
   const handleAdd = () => {
@@ -114,6 +147,7 @@ export const LandingList: React.FC = () => {
   };
 
   const columns: Column<LandingItem>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'landingDate', header: 'Date', render: (item) => item.landingDate ? new Date(item.landingDate).toLocaleDateString() : '-' },
     { key: 'port', header: 'Port' },
     { key: 'totalWeight', header: 'Total Weight (kg)', render: (item) => item.totalWeight ? `${item.totalWeight} kg` : '-' },
@@ -139,6 +173,15 @@ export const LandingList: React.FC = () => {
           You have view-only access to this page.
         </div>
       )}
+      <FilterPanel
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        isExpanded={isFilterExpanded}
+        onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
+      />
       <Card
         title="Landings"
         subtitle="Track fish landings at ports"

@@ -24,6 +24,7 @@ import { InspectorList } from './components/inspections/InspectorList';
 import { ViolationList } from './components/inspections/ViolationList';
 import { FishBatchList, LandingList, BatchLocationList } from './components/batches';
 import { RecreationalCatchList, TicketPurchaseList } from './components/recreational';
+import { ExpiringPermitsReport, FishermenRankingReport, VesselStatisticsReport, CarbonFootprintReport } from './components/reports';
 import { useAuth } from './shared/hooks/useAuth';
 import { isAdmin } from './shared/utils/permissions';
 import logo from './assets/logo.png';
@@ -185,7 +186,7 @@ function App() {
                     <Route path="/batches/locations" element={<BatchLocationList />} />
                     
                     {/* Registry */}
-                    <Route path="/registry/persons" element={<PersonList />} />
+                    <Route path="/registry/persons" element={<AdminRoute><PersonList /></AdminRoute>} />
                     <Route path="/registry/vessels" element={<VesselList />} />
                     <Route path="/registry/telk-decisions" element={<TELKDecisionList />} />
                     
@@ -197,6 +198,12 @@ function App() {
                     {/* Recreational Fishing */}
                     <Route path="/recreational/catches" element={<RecreationalCatchList />} />
                     <Route path="/recreational/tickets" element={<TicketPurchaseList />} />
+                    
+                    {/* Reports */}
+                    <Route path="/reports/expiring-permits" element={<ExpiringPermitsReport />} />
+                    <Route path="/reports/fishermen-ranking" element={<FishermenRankingReport />} />
+                    <Route path="/reports/vessel-statistics" element={<VesselStatisticsReport />} />
+                    <Route path="/reports/carbon-footprint" element={<CarbonFootprintReport />} />
                     
                     {/* Catch-all */}
                     <Route path="*" element={

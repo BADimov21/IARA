@@ -1,0 +1,160 @@
+.fishermen-ranking-report {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.report-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.report-header h1 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.report-description {
+  color: #7f8c8d;
+  font-size: 0.95rem;
+}
+
+.podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 2rem;
+  margin: 3rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+}
+
+.podium-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s;
+}
+
+.podium-place:hover {
+  transform: translateY(-5px);
+}
+
+.podium-place.place-1 {
+  order: 2;
+  padding: 2rem 1.5rem;
+}
+
+.podium-place.place-2 {
+  order: 1;
+}
+
+.podium-place.place-3 {
+  order: 3;
+}
+
+.medal {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.podium-place .fisher-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #2c3e50;
+  text-align: center;
+}
+
+.podium-place .weight {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #3498db;
+}
+
+.podium-place .catches {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.report-table thead {
+  background: #3498db;
+  color: white;
+}
+
+.report-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.report-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.report-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.report-table tbody tr.top-1 {
+  background-color: #fff9e6 !important;
+}
+
+.report-table tbody tr.top-2 {
+  background-color: #f5f5f5 !important;
+}
+
+.report-table tbody tr.top-3 {
+  background-color: #fff3e0 !important;
+}
+
+.rank-cell {
+  text-align: center;
+  font-weight: 600;
+}
+
+.rank-badge {
+  font-size: 1.3rem;
+}
+
+.fisher-name-cell {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.weight-cell {
+  font-weight: 600;
+  color: #27ae60;
+}
+
+.no-data {
+  text-align: center;
+  padding: 3rem;
+  background: #ecf0f1;
+  border-radius: 12px;
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: #7f8c8d;
+}

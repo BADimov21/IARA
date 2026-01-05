@@ -193,6 +193,7 @@ export const RecreationalCatchList: React.FC = () => {
   };
 
   const columns: Column<RecreationalCatchItem>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'catchDateTime', header: 'Date', render: (item) => item.catchDateTime ? new Date(item.catchDateTime).toLocaleDateString() : '-' },
     { key: 'species', header: 'Fish Species', render: (item) => item.species?.name || '-' },
     { key: 'quantity', header: 'Quantity' },
@@ -227,7 +228,7 @@ export const RecreationalCatchList: React.FC = () => {
         </p>
       </div>
       <Card
-        title="My Fishing Catches"
+        title={role === 'Admin' ? 'All Recreational Catches' : 'My Fishing Catches'}
         subtitle="Record and track your recreational fishing catches"
         actions={canCreate(role, 'recreationalCatches') ? <Button variant="primary" onClick={handleAdd}>📝 Record New Catch</Button> : undefined}
       >

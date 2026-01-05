@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { catchApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { CatchFilter, BaseFilter } from '../../../shared/types';
+import type { FilterField } from '../../shared/FilterPanel/FilterPanel';
 
 interface CatchItem {
   id: number;
@@ -23,6 +24,8 @@ export const CatchList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CatchItem | null>(null);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
   const [formData, setFormData] = useState({
     fishingTripId: '',
     fishSpecyId: '',
@@ -30,14 +33,24 @@ export const CatchList: React.FC = () => {
     weight: '',
   });
 
+  const filterFields: FilterField[] = [
+    { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
+    { name: 'fishingTripId', label: 'Trip ID', type: 'number', placeholder: 'Search by trip' },
+    { name: 'fishSpecyId', label: 'Species ID', type: 'number', placeholder: 'Search by species' },
+    { name: 'minQuantity', label: 'Min Quantity', type: 'number', placeholder: 'Min quantity' },
+    { name: 'maxQuantity', label: 'Max Quantity', type: 'number', placeholder: 'Max quantity' },
+    { name: 'minWeight', label: 'Min Weight (kg)', type: 'number', placeholder: 'Min weight' },
+    { name: 'maxWeight', label: 'Max Weight (kg)', type: 'number', placeholder: 'Max weight' },
+  ];
+
   useEffect(() => {
     loadCatches();
   }, []);
 
-  const loadCatches = async () => {
+  const loadCatches = async (customFilters?: CatchFilter) => {
     try {
       setLoading(true);
-      const filters: BaseFilter<CatchFilter> = { page: 1, pageSize: 100, filters: {} };
+      const filters: BaseFilter<CatchFilter> = { page: 1, pageSize: 100, filters: customFilters || {} };
       const data = await catchApi.getAll(filters);
       setCatches(data);
     } catch (error) {
@@ -45,6 +58,26 @@ export const CatchList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (name: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    const filters: CatchFilter = {};
+    Object.keys(filterValues).forEach((key) => {
+      const value = filterValues[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        filters[key as keyof CatchFilter] = Number(value);
+      }
+    });
+    loadCatches(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({});
+    loadCatches({});
   };
 
   const handleAdd = () => {
@@ -115,6 +148,7 @@ export const CatchList: React.FC = () => {
   };
 
   const columns: Column<CatchItem>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'fishSpecyName', header: 'Fish Species' },
     { key: 'quantity', header: 'Quantity' },
     { key: 'weight', header: 'Weight (kg)', render: (item) => item.weight ? `${item.weight} kg` : '-' },
@@ -140,6 +174,15 @@ export const CatchList: React.FC = () => {
           You have view-only access to this page.
         </div>
       )}
+      <FilterPanel
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        isExpanded={isFilterExpanded}
+        onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
+      />
       <Card
         title="Catches"
         subtitle="Manage catch records"

@@ -11,6 +11,7 @@ using IARA.BusinessLogic.Services.Modules.FishingModule;
 using IARA.BusinessLogic.Services.Modules.InspectionsModule;
 using IARA.BusinessLogic.Services.Modules.NomenclaturesModule;
 using IARA.BusinessLogic.Services.Modules.PersonsModule;
+using IARA.BusinessLogic.Services.Modules.ReportsModule;
 using IARA.BusinessLogic.Services.Modules.TELKModule;
 using IARA.BusinessLogic.Services.Modules.TicketsModule;
 using IARA.BusinessLogic.Services.Modules.VesselsModule;
@@ -147,6 +148,9 @@ public class Program
         builder.Services.AddScoped<IFishSpecyService, FishSpecyService>();
         builder.Services.AddScoped<IFishingGearTypeService, FishingGearTypeService>();
         builder.Services.AddScoped<IEngineTypeService, EngineTypeService>();
+
+        // Register Reports Module services
+        builder.Services.AddScoped<IReportService, ReportService>();
 
         // Add controllers
         builder.Services.AddControllers();

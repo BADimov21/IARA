@@ -66,6 +66,23 @@ public class ViolationService : BaseService, IViolationService
         violation.InspectionId = dto.InspectionId;
         violation.Description = dto.Description;
         if (dto.FineAmount != null) violation.FineAmount = dto.FineAmount.Value;
+        
+        // Handle payment status update
+        if (dto.IsPaid.HasValue)
+        {
+            violation.IsPaid = dto.IsPaid.Value;
+            // If marking as paid and no paid date set, use current date
+            if (dto.IsPaid.Value && !violation.PaidDate.HasValue)
+            {
+                violation.PaidDate = DateTime.Now;
+            }
+        }
+        
+        // Allow updating paid date
+        if (dto.PaidDate.HasValue)
+        {
+            violation.PaidDate = dto.PaidDate;
+        }
 
         return Db.SaveChanges() > 0;
     }
@@ -94,7 +111,9 @@ public class ViolationService : BaseService, IViolationService
                     Id = violation.Id,
                     InspectionId = violation.InspectionId,
                     Description = violation.Description,
-                    FineAmount = violation.FineAmount
+                    FineAmount = violation.FineAmount,
+                    IsPaid = violation.IsPaid,
+                    PaidDate = violation.PaidDate
                 });
     }
 

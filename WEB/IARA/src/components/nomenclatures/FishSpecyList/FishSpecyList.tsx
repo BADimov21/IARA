@@ -5,11 +5,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { fishSpecyApi } from '../../../shared/api';
-import { Table, Button, Card, Loading, Modal, Input, ConfirmDialog, useToast } from '../../shared';
+import { Table, Button, Card, Loading, Modal, Input, ConfirmDialog, useToast, FilterPanel } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
+import type { FilterField } from '../../shared';
 import type { FishSpecyFilter, BaseFilter } from '../../../shared/types';
 
 interface FishSpecyItem {
@@ -26,14 +27,21 @@ export const FishSpecyList: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<FishSpecyItem | null>(null);
   const [formData, setFormData] = useState({ speciesName: '' });
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
 
-  const loadData = async () => {
+  const filterFields: FilterField[] = [
+    { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
+    { name: 'speciesName', label: 'Species Name', type: 'text', placeholder: 'Search species name' },
+  ];
+
+  const loadData = async (customFilters?: FishSpecyFilter) => {
     setIsLoading(true);
     try {
       const filters: BaseFilter<FishSpecyFilter> = {
         page: 1,
         pageSize: 100,
-        filters: {},
+        filters: customFilters || {},
       };
       const response = await fishSpecyApi.getAll(filters);
       if (response && Array.isArray(response)) {
@@ -44,6 +52,30 @@ export const FishSpecyList: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleFilterChange = (name: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    const filters: FishSpecyFilter = {};
+    Object.keys(filterValues).forEach((key) => {
+      const value = filterValues[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        if (key === 'id') {
+          filters[key] = Number(value);
+        } else {
+          filters[key as keyof FishSpecyFilter] = value as any;
+        }
+      }
+    });
+    loadData(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({});
+    loadData({});
   };
 
   useEffect(() => {
@@ -154,6 +186,17 @@ export const FishSpecyList: React.FC = () => {
           You have view-only access to this page.
         </div>
       )}
+
+      <FilterPanel
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        isExpanded={isFilterExpanded}
+        onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
+      />
+
       <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.5rem', borderLeft: '4px solid rgb(99, 102, 241)' }}>
         <strong>🐟 Fish Species Management</strong>
         <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
@@ -164,7 +207,7 @@ export const FishSpecyList: React.FC = () => {
       <Card
         title="Fish Species"
         subtitle="Manage fish species nomenclature"
-        actions={canCreate(role, 'fishSpecies') ? <Button variant="primary" onClick={handleAdd}>Add Fish Species</Button> : undefined}
+        actions={canCreate(role, 'fishSpecies') ? <Button variant="primary" onClick={handleAdd}>+ Add Fish Species</Button> : undefined}
       >
         <Table columns={columns} data={fishSpecies} />
       </Card>

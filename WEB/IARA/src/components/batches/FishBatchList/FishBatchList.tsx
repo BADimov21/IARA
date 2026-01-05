@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { fishBatchApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { FishBatchFilter, BaseFilter } from '../../../shared/types';
+import type { FilterField } from '../../shared/FilterPanel/FilterPanel';
 
 interface FishBatchItem {
   id: number;
@@ -24,6 +25,8 @@ export const FishBatchList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FishBatchItem | null>(null);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
   const [formData, setFormData] = useState({
     fishSpecyId: '',
     quantity: '',
@@ -31,14 +34,24 @@ export const FishBatchList: React.FC = () => {
     batchNumber: '',
   });
 
+  const filterFields: FilterField[] = [
+    { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
+    { name: 'batchNumber', label: 'Batch Number', type: 'text', placeholder: 'Search batch number' },
+    { name: 'fishSpecyId', label: 'Species ID', type: 'number', placeholder: 'Search by species' },
+    { name: 'minQuantity', label: 'Min Quantity', type: 'number', placeholder: 'Min quantity' },
+    { name: 'maxQuantity', label: 'Max Quantity', type: 'number', placeholder: 'Max quantity' },
+    { name: 'minWeight', label: 'Min Weight (kg)', type: 'number', placeholder: 'Min weight' },
+    { name: 'maxWeight', label: 'Max Weight (kg)', type: 'number', placeholder: 'Max weight' },
+  ];
+
   useEffect(() => {
     loadBatches();
   }, []);
 
-  const loadBatches = async () => {
+  const loadBatches = async (customFilters?: FishBatchFilter) => {
     try {
       setLoading(true);
-      const filters: BaseFilter<FishBatchFilter> = { page: 1, pageSize: 100, filters: {} };
+      const filters: BaseFilter<FishBatchFilter> = { page: 1, pageSize: 100, filters: customFilters || {} };
       const data = await fishBatchApi.getAll(filters);
       setBatches(data);
     } catch (error) {
@@ -46,6 +59,26 @@ export const FishBatchList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (name: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    const filters: FishBatchFilter = {};
+    Object.keys(filterValues).forEach((key) => {
+      const value = filterValues[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        (filters as any)[key] = key === 'batchNumber' ? value : Number(value);
+      }
+    });
+    loadBatches(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({});
+    loadBatches({});
   };
 
   const handleAdd = () => {
@@ -116,6 +149,7 @@ export const FishBatchList: React.FC = () => {
   };
 
   const columns: Column<FishBatchItem>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'batchNumber', header: 'Batch Number' },
     { key: 'fishSpecyName', header: 'Fish Species' },
     { key: 'quantity', header: 'Quantity' },
@@ -142,6 +176,15 @@ export const FishBatchList: React.FC = () => {
           You have view-only access to this page.
         </div>
       )}
+      <FilterPanel
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        isExpanded={isFilterExpanded}
+        onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
+      />
       <Card
         title="Fish Batches"
         subtitle="Manage fish batch inventory"

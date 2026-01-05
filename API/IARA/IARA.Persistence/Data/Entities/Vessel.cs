@@ -29,6 +29,9 @@ public partial class Vessel
     [Column(TypeName = "decimal(6, 2)")]
     public decimal Width { get; set; }
 
+    [Column(TypeName = "decimal(6, 2)")]
+    public decimal Draft { get; set; }
+
     [Column(TypeName = "decimal(8, 2)")]
     public decimal GrossTonnage { get; set; }
 

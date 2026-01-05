@@ -273,6 +273,7 @@ export const TicketPurchaseList: React.FC = () => {
   };
 
   const columns: Column<TicketPurchaseItem>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'ticketNumber', header: 'Ticket #' },
     { key: 'purchaseDate', header: 'Purchase Date', render: (item) => item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString() : '-' },
     { key: 'person', header: 'Person', render: (item) => item.person?.fullName || '-' },
@@ -310,7 +311,7 @@ export const TicketPurchaseList: React.FC = () => {
         </p>
       </div>
       <Card
-        title="My Fishing Tickets"
+        title={role === 'Admin' ? 'All Ticket Purchases' : 'My Fishing Tickets'}
         subtitle="View and purchase recreational fishing tickets"
         actions={canCreate(role, 'ticketPurchases') ? <Button variant="primary" onClick={handleAdd}>🎫 Purchase New Ticket</Button> : undefined}
       >

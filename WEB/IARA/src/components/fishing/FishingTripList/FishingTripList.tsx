@@ -4,12 +4,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { fishingTripApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
 import type { Column } from '../../shared/Table/Table';
 import type { FishingTripFilter, BaseFilter } from '../../../shared/types';
+import type { FilterField } from '../../shared/FilterPanel/FilterPanel';
 
 interface FishingTripItem {
   id: number;
@@ -28,6 +29,8 @@ export const FishingTripList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FishingTripItem | null>(null);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
   const [formData, setFormData] = useState({
     vesselId: '',
     departureDate: '',
@@ -36,14 +39,22 @@ export const FishingTripList: React.FC = () => {
     arrivalPort: '',
   });
 
+  const filterFields: FilterField[] = [
+    { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
+    { name: 'vesselId', label: 'Vessel ID', type: 'number', placeholder: 'Search by vessel' },
+    { name: 'departureDateFrom', label: 'Departure From', type: 'date' },
+    { name: 'departureDateTo', label: 'Departure To', type: 'date' },
+    { name: 'departurePort', label: 'Departure Port', type: 'text', placeholder: 'Search port' },
+  ];
+
   useEffect(() => {
     loadTrips();
   }, []);
 
-  const loadTrips = async () => {
+  const loadTrips = async (customFilters?: FishingTripFilter) => {
     try {
       setLoading(true);
-      const filters: BaseFilter<FishingTripFilter> = { page: 1, pageSize: 100, filters: {} };
+      const filters: BaseFilter<FishingTripFilter> = { page: 1, pageSize: 100, filters: customFilters || {} };
       const data = await fishingTripApi.getAll(filters);
       setTrips(data);
     } catch (error) {
@@ -51,6 +62,30 @@ export const FishingTripList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (name: string, value: any) => {
+    setFilterValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    const filters: FishingTripFilter = {};
+    Object.keys(filterValues).forEach((key) => {
+      const value = filterValues[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        if (key === 'id' || key === 'vesselId') {
+          filters[key] = Number(value);
+        } else {
+          filters[key as keyof FishingTripFilter] = value as any;
+        }
+      }
+    });
+    loadTrips(filters);
+  };
+
+  const handleClearFilters = () => {
+    setFilterValues({});
+    loadTrips({});
   };
 
   const handleAdd = () => {
@@ -124,6 +159,7 @@ export const FishingTripList: React.FC = () => {
   };
 
   const columns: Column<FishingTripItem>[] = [
+    { key: 'id', header: 'ID', width: '80px' },
     { key: 'vesselName', header: 'Vessel' },
     { key: 'departureDate', header: 'Departure', render: (item) => item.departureDate ? new Date(item.departureDate).toLocaleDateString() : '-' },
     { key: 'departurePort', header: 'From' },
@@ -150,6 +186,15 @@ export const FishingTripList: React.FC = () => {
           You have view-only access to this page.
         </div>
       )}
+      <FilterPanel
+        fields={filterFields}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        isExpanded={isFilterExpanded}
+        onToggle={() => setIsFilterExpanded(!isFilterExpanded)}
+      />
       <Card
         title="Fishing Trips"
         subtitle="Track fishing vessel trips"

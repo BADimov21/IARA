@@ -18,3 +18,5 @@ export { AdminRoute } from './AdminRoute';
 export { Footer } from './Footer';
 export { ConfirmDialog } from './ConfirmDialog';
 export { PersonalInfoGuard } from './PersonalInfoGuard';
+export { FilterPanel } from './FilterPanel';
+export type { FilterField } from './FilterPanel';
