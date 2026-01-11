@@ -12,6 +12,7 @@ using IARA.DomainModel.Filters;
 using IARA.Infrastructure.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace IARA.API.Controllers.Modules.TicketsModule;
 
@@ -30,7 +31,9 @@ public class RecreationalCatchController : Controller
     [HttpPost]
     public IActionResult GetAll([FromBody] BaseFilter<RecreationalCatchFilter> filters)
     {
-        return Ok(_recreationalCatchService.GetAll(filters));
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var isAdmin = User.IsInRole("Admin");
+        return Ok(_recreationalCatchService.GetAll(filters, userId, isAdmin));
     }
 
     [HttpGet]

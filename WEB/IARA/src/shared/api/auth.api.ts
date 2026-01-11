@@ -105,4 +105,11 @@ export const userApi = {
   delete: async (id: string): Promise<boolean> => {
     return httpClient.delete<boolean>(`${API_ENDPOINTS.USER.DELETE}?id=${id}`);
   },
+
+  /**
+   * Unban user (Admin only)
+   */
+  unban: async (id: string): Promise<boolean> => {
+    return httpClient.post<boolean>(`${API_ENDPOINTS.USER.UNBAN}?id=${id}`);
+  },
 };

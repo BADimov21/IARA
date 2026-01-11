@@ -31,13 +31,35 @@ public class RecreationalCatchService : BaseService, IRecreationalCatchService
     {
     }
 
-    public IQueryable<RecreationalCatchResponseDTO> GetAll(BaseFilter<RecreationalCatchFilter> filters)
+    public IQueryable<RecreationalCatchResponseDTO> GetAll(BaseFilter<RecreationalCatchFilter> filters, string? userId, bool isAdmin)
     {
+        var query = GetAllFromDatabase();
+        
+        // Filter by user's PersonId for non-admin users
+        if (!isAdmin && !string.IsNullOrEmpty(userId))
+        {
+            var user = Db.Users.FirstOrDefault(u => u.Id == userId);
+            if (user?.PersonId != null)
+            {
+                // Filter catches by ticket purchases that belong to this person
+                var userTicketIds = Db.TicketPurchases
+                    .Where(tp => tp.PersonId == user.PersonId.Value)
+                    .Select(tp => tp.Id)
+                    .ToList();
+                query = query.Where(rc => userTicketIds.Contains(rc.TicketPurchaseId));
+            }
+            else
+            {
+                // User has no PersonId, return empty result
+                return Enumerable.Empty<RecreationalCatchResponseDTO>().AsQueryable();
+            }
+        }
+        
         if (string.IsNullOrEmpty(filters.FreeTextSearch))
         {
-            return ApplyMapping(ApplyPagination(ApplyFilters(GetAllFromDatabase(), filters.Filters), filters.Page, filters.PageSize));
+            return ApplyMapping(ApplyPagination(ApplyFilters(query, filters.Filters), filters.Page, filters.PageSize));
         }
-        return ApplyMapping(ApplyPagination(ApplyFreeTextSearch(GetAllFromDatabase(), filters.FreeTextSearch), filters.Page, filters.PageSize));
+        return ApplyMapping(ApplyPagination(ApplyFreeTextSearch(query, filters.FreeTextSearch), filters.Page, filters.PageSize));
     }
 
     public IQueryable<RecreationalCatchResponseDTO> Get(int id)

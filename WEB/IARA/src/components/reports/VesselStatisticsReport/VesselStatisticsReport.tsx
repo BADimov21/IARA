@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { reportsApi } from '../../../api/reports.api';
-import type { VesselStatistics } from '../../../api/reports.api';
+import { reportsApi } from '../../../shared/api/reports.api';
+import type { VesselStatistics } from '../../../shared/api/reports.api';
 import { useToast, Card, Loading } from '../../shared';
 import './VesselStatisticsReport.css';
 

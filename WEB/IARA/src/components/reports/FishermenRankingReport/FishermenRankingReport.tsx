@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { reportsApi } from '../../../api/reports.api';
-import type { RecreationalFishermenRanking } from '../../../api/reports.api';
+import { reportsApi } from '../../../shared/api/reports.api';
+import type { RecreationalFishermenRanking } from '../../../shared/api/reports.api';
 import { useToast } from '../../shared/Toast';
 import './FishermenRankingReport.css';
 

@@ -75,7 +75,8 @@ export const LoginForm: React.FC = () => {
       console.log('Error details:', {
         response: error?.response,
         data: error?.response?.data,
-        message: error?.message
+        message: error?.message,
+        fullError: error
       });
       
       let errorMessage = 'Login failed. Please try again.';
@@ -83,7 +84,17 @@ export const LoginForm: React.FC = () => {
       if (error && typeof error === 'object') {
         const data = error;
         
-        // Check for specific error messages
+        console.log('Checking error fields:', {
+          hasMessage: !!data.message,
+          message: data.message,
+          hasError: !!data.error,
+          errorField: data.error,
+          hasTitle: !!data.title,
+          title: data.title,
+          rawData: data
+        });
+        
+        // Check for specific error messages first (before checking status codes)
         if (data.message && data.message !== 'Bad Request') {
           errorMessage = data.message;
         } else if (data.error && typeof data.error === 'string') {
@@ -91,7 +102,7 @@ export const LoginForm: React.FC = () => {
         } else if (data.title && typeof data.title === 'string') {
           errorMessage = data.title;
         } 
-        // Check status code
+        // Only use generic message if no specific message was provided
         else if (data.statusCode || data.status) {
           const status = data.statusCode || data.status;
           if (status === 400 || status === 401) {

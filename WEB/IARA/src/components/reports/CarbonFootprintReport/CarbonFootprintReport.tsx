@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { reportsApi } from '../../../api/reports.api';
-import type { VesselCarbonFootprint } from '../../../api/reports.api';
+import { reportsApi } from '../../../shared/api/reports.api';
+import type { VesselCarbonFootprint } from '../../../shared/api/reports.api';
 import { useToast } from '../../shared/Toast';
 import './CarbonFootprintReport.css';
 

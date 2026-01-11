@@ -93,7 +93,7 @@ export const UserList: React.FC = () => {
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
       title: 'Ban User',
-      message: 'Are you sure you want to ban this user? They will no longer be able to log in and will be hidden from the user list.',
+      message: 'Are you sure you want to ban this user? They will no longer be able to log in.',
       confirmText: 'Ban User',
       variant: 'danger',
     });
@@ -107,6 +107,26 @@ export const UserList: React.FC = () => {
     } catch (error) {
       console.error('Failed to ban user:', error);
       toast.error('Failed to ban user');
+    }
+  };
+
+  const handleUnban = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Unban User',
+      message: 'Are you sure you want to unban this user? They will be able to log in again.',
+      confirmText: 'Unban User',
+      variant: 'primary',
+    });
+    
+    if (!confirmed) return;
+
+    try {
+      await userApi.unban(id);
+      toast.success('User unbanned successfully');
+      await loadUsers();
+    } catch (error) {
+      console.error('Failed to unban user:', error);
+      toast.error('Failed to unban user');
     }
   };
 
@@ -130,15 +150,65 @@ export const UserList: React.FC = () => {
     { key: 'email', header: 'Email' },
     { key: 'userType', header: 'Role' },
     {
+      key: 'isActive',
+      header: 'Status',
+      width: '100px',
+      render: (item) => (
+        <span style={{
+          padding: '0.25rem 0.75rem',
+          borderRadius: '0.5rem',
+          fontSize: '0.875rem',
+          fontWeight: 500,
+          background: item.isActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+          color: item.isActive ? '#15803d' : '#dc2626',
+          border: item.isActive ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)'
+        }}>
+          {item.isActive ? 'Active' : 'Banned'}
+        </span>
+      ),
+    },
+    {
       key: 'actions',
       header: 'Actions',
       width: '180px',
-      render: (item) => (
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>
-          <Button size="small" variant="danger" onClick={() => handleDelete(item.userId)}>Ban</Button>
-        </div>
-      ),
+      render: (item) => {
+        const isAdminUser = item.userType === 'Admin';
+        const isBanned = !item.isActive;
+        return (
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Button 
+              size="small" 
+              variant="primary" 
+              onClick={() => handleEdit(item)}
+              disabled={isAdminUser}
+              title={isAdminUser ? 'Admin users cannot be edited' : ''}
+            >
+              Edit
+            </Button>
+            {isBanned ? (
+              <Button 
+                size="small" 
+                variant="success" 
+                onClick={() => handleUnban(item.userId)}
+                disabled={isAdminUser}
+                title={isAdminUser ? 'Admin users cannot be unbanned' : ''}
+              >
+                Unban
+              </Button>
+            ) : (
+              <Button 
+                size="small" 
+                variant="danger" 
+                onClick={() => handleDelete(item.userId)}
+                disabled={isAdminUser}
+                title={isAdminUser ? 'Admin users cannot be banned' : ''}
+              >
+                Ban
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 

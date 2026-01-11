@@ -26,7 +26,8 @@ export const TicketPurchaseList: React.FC = () => {
   const toast = useToast();
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const [purchases, setPurchases] = useState<TicketPurchaseItem[]>([]);
-  const [ticketTypes, setTicketTypes] = useState<Array<{ id: number; typeName: string; priceAdult: number; validityDays: number }>>([]);
+  const [ticketTypes, setTicketTypes] = useState<Array<{ id: number; typeName: string; priceAdult: number; validityDays: number; isFreeForDisabled: boolean }>>([]);
+  const [telkDecisions, setTelkDecisions] = useState<Array<{ id: number; decisionNumber: string; validUntil: string }>>([]);
   const [userPersonId, setUserPersonId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,6 +39,7 @@ export const TicketPurchaseList: React.FC = () => {
     purchaseDate: '',
     validFrom: '',
     validTo: '',
+    telkDecisionId: '',
   });
   const [paymentData, setPaymentData] = useState({
     cardNumber: '',
@@ -55,6 +57,7 @@ export const TicketPurchaseList: React.FC = () => {
       loadPurchases(),
       loadTicketTypes(),
       loadUserPersonInfo(),
+      loadTelkDecisions(),
     ]);
   };
 
@@ -76,6 +79,28 @@ export const TicketPurchaseList: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load user person info:', error);
+    }
+  };
+
+  const loadTelkDecisions = async () => {
+    try {
+      const data = await personApi.getTelkDecisions();
+      // Filter only valid TELK decisions
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const validDecisions = (data || []).filter((d: any) => {
+        const validUntil = new Date(d.validUntil);
+        validUntil.setHours(0, 0, 0, 0);
+        return validUntil >= today;
+      });
+      setTelkDecisions(validDecisions.map((d: any) => ({
+        id: d.id,
+        decisionNumber: d.decisionNumber,
+        validUntil: d.validUntil
+      })));
+    } catch (error) {
+      console.error('Failed to load TELK decisions:', error);
+      setTelkDecisions([]);
     }
   };
 
@@ -105,7 +130,8 @@ export const TicketPurchaseList: React.FC = () => {
       ticketTypeId: '', 
       purchaseDate: today, 
       validFrom: today, 
-      validTo: '' 
+      validTo: '',
+      telkDecisionId: ''
     });
     setIsModalOpen(true);
   };
@@ -119,6 +145,7 @@ export const TicketPurchaseList: React.FC = () => {
       purchaseDate: item.purchaseDate ? item.purchaseDate.split('T')[0] : '',
       validFrom: item.validFrom ? item.validFrom.split('T')[0] : '',
       validTo: item.validUntil ? item.validUntil.split('T')[0] : '',
+      telkDecisionId: '',
     });
     setIsModalOpen(true);
   };
@@ -166,13 +193,19 @@ export const TicketPurchaseList: React.FC = () => {
     return eur.toFixed(2);
   };
 
-  const getSelectedTicketPrice = (): { bgn: number; eur: string } | null => {
+  const getSelectedTicketPrice = (): { bgn: number; eur: string; isFree: boolean } | null => {
     if (!formData.ticketTypeId) return null;
     const selectedType = ticketTypes.find(t => t.id.toString() === formData.ticketTypeId);
     if (!selectedType) return null;
+    
+    // Check if ticket is free for disabled persons with valid TELK decision
+    const isFree = !!(selectedType.isFreeForDisabled && formData.telkDecisionId);
+    const price = isFree ? 0 : selectedType.priceAdult;
+    
     return {
-      bgn: selectedType.priceAdult,
-      eur: getTicketPriceInEuros(selectedType.priceAdult)
+      bgn: price,
+      eur: getTicketPriceInEuros(price),
+      isFree: isFree
     };
   };
 
@@ -228,7 +261,38 @@ export const TicketPurchaseList: React.FC = () => {
       return;
     }
     
-    // Show payment modal
+    const priceInfo = getSelectedTicketPrice();
+    
+    // If ticket is free, submit directly without payment
+    if (priceInfo?.isFree) {
+      try {
+        toast.info('Processing free ticket...');
+        
+        const payload: any = {
+          ticketTypeId: Number(formData.ticketTypeId),
+          personId: Number(formData.personId),
+          purchaseDate: formData.purchaseDate,
+          validFrom: formData.validFrom,
+          validUntil: formData.validTo,
+          pricePaid: 0,
+        };
+        
+        if (formData.telkDecisionId) {
+          payload.telkDecisionId = Number(formData.telkDecisionId);
+        }
+        
+        await ticketPurchaseApi.add(payload);
+        setIsModalOpen(false);
+        toast.success('Free ticket issued successfully!');
+        await loadPurchases();
+      } catch (error) {
+        console.error('Failed to issue free ticket:', error);
+        toast.error('Failed to issue free ticket');
+      }
+      return;
+    }
+    
+    // Show payment modal for paid tickets
     setIsModalOpen(false);
     setIsPaymentModalOpen(true);
   };
@@ -249,15 +313,20 @@ export const TicketPurchaseList: React.FC = () => {
       // Wait a bit to simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      const selectedTicket = ticketTypes.find(t => t.id.toString() === formData.ticketTypeId);
-      const payload = {
+      const priceInfo = getSelectedTicketPrice();
+      const payload: any = {
         ticketTypeId: Number(formData.ticketTypeId),
         personId: Number(formData.personId),
         purchaseDate: formData.purchaseDate,
         validFrom: formData.validFrom,
         validUntil: formData.validTo,
-        pricePaid: selectedTicket?.priceAdult || 0,
+        pricePaid: priceInfo?.bgn || 0,
       };
+      
+      // Add TELK decision if selected
+      if (formData.telkDecisionId) {
+        payload.telkDecisionId = Number(formData.telkDecisionId);
+      }
       
       console.log('Sending ticket purchase payload:', payload);
       await ticketPurchaseApi.add(payload);
@@ -356,6 +425,26 @@ export const TicketPurchaseList: React.FC = () => {
               fullWidth 
             />
             
+            {telkDecisions.length > 0 && formData.ticketTypeId && ticketTypes.find(t => t.id.toString() === formData.ticketTypeId)?.isFreeForDisabled && (
+              <div style={{ padding: '1rem', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '0.5rem', border: '2px solid rgba(34, 197, 94, 0.3)' }}>
+                <strong style={{ color: '#166534' }}>✓ Free Ticket Available for Disabled Persons</strong>
+                <p style={{ margin: '0.5rem 0', fontSize: '0.9rem', color: '#166534' }}>
+                  This ticket type is free for disabled persons with a valid TELK decision. Please select your TELK decision below.
+                </p>
+                <Select 
+                  label="TELK Decision" 
+                  value={formData.telkDecisionId} 
+                  onChange={(e) => setFormData({ ...formData, telkDecisionId: e.target.value })} 
+                  options={telkDecisions.map(d => ({ 
+                    value: d.id.toString(), 
+                    label: `Decision #${d.decisionNumber} (Valid until: ${new Date(d.validUntil).toLocaleDateString()})` 
+                  }))}
+                  helperText="Select a valid TELK decision to get this ticket for free"
+                  fullWidth 
+                />
+              </div>
+            )}
+            
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <Input 
                 label="Valid From" 
@@ -398,7 +487,11 @@ export const TicketPurchaseList: React.FC = () => {
                 </p>
                 {getSelectedTicketPrice() && (
                   <p style={{ margin: '0.5rem 0 0 0', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                    Total Price: €{getSelectedTicketPrice()!.eur} EUR ({getSelectedTicketPrice()!.bgn} BGN)
+                    {getSelectedTicketPrice()!.isFree ? (
+                      <span style={{ color: '#15803d' }}>Total Price: FREE (TELK Decision Applied) 🎉</span>
+                    ) : (
+                      <span>Total Price: €{getSelectedTicketPrice()!.eur} EUR ({getSelectedTicketPrice()!.bgn} BGN)</span>
+                    )}
                   </p>
                 )}
               </div>
@@ -406,7 +499,11 @@ export const TicketPurchaseList: React.FC = () => {
             
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button type="submit" variant="primary">Proceed to Payment</Button>
+              {getSelectedTicketPrice()?.isFree ? (
+                <Button type="submit" variant="success">✓ Get Free Ticket</Button>
+              ) : (
+                <Button type="submit" variant="primary">Proceed to Payment</Button>
+              )}
             </div>
           </form>
         </Modal>

@@ -9,6 +9,7 @@ public interface ITELKDecisionService
 {
     IQueryable<TELKDecisionResponseDTO> GetAll(BaseFilter<TELKDecisionFilter> filters);
     IQueryable<TELKDecisionResponseDTO> Get(int id);
+    IQueryable<TELKDecisionResponseDTO> GetAllForCurrentUser(string userId);
     int Add(TELKDecisionCreateRequestDTO dto);
     bool Edit(TELKDecisionUpdateRequestDTO dto);
     bool Delete(int id);

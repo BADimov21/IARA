@@ -12,6 +12,7 @@ using IARA.DomainModel.Filters;
 using IARA.Infrastructure.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace IARA.API.Controllers.Modules.TELKModule;
 
@@ -37,6 +38,17 @@ public class TELKDecisionController : Controller
     public IActionResult Get([FromQuery] int id)
     {
         return Ok(_telkDecisionService.Get(id));
+    }
+
+    [HttpGet]
+    public IActionResult GetAllForCurrentUser()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(new { message = "User not authenticated" });
+        }
+        return Ok(_telkDecisionService.GetAllForCurrentUser(userId));
     }
 
     [HttpPost]

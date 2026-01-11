@@ -7,7 +7,7 @@ namespace IARA.Infrastructure.Contracts;
 
 public interface IRecreationalCatchService
 {
-    IQueryable<RecreationalCatchResponseDTO> GetAll(BaseFilter<RecreationalCatchFilter> filters);
+    IQueryable<RecreationalCatchResponseDTO> GetAll(BaseFilter<RecreationalCatchFilter> filters, string? userId, bool isAdmin);
     IQueryable<RecreationalCatchResponseDTO> Get(int id);
     int Add(RecreationalCatchCreateRequestDTO dto);
     bool Edit(RecreationalCatchUpdateRequestDTO dto);

@@ -31,13 +31,30 @@ public class TicketPurchaseService : BaseService, ITicketPurchaseService
     {
     }
 
-    public IQueryable<TicketPurchaseResponseDTO> GetAll(BaseFilter<TicketPurchaseFilter> filters)
+    public IQueryable<TicketPurchaseResponseDTO> GetAll(BaseFilter<TicketPurchaseFilter> filters, string? userId, bool isAdmin)
     {
+        var query = GetAllFromDatabase();
+        
+        // Filter by user's PersonId for non-admin users
+        if (!isAdmin && !string.IsNullOrEmpty(userId))
+        {
+            var user = Db.Users.FirstOrDefault(u => u.Id == userId);
+            if (user?.PersonId != null)
+            {
+                query = query.Where(tp => tp.PersonId == user.PersonId.Value);
+            }
+            else
+            {
+                // User has no PersonId, return empty result
+                return Enumerable.Empty<TicketPurchaseResponseDTO>().AsQueryable();
+            }
+        }
+        
         if (string.IsNullOrEmpty(filters.FreeTextSearch))
         {
-            return ApplyMapping(ApplyPagination(ApplyFilters(GetAllFromDatabase(), filters.Filters), filters.Page, filters.PageSize));
+            return ApplyMapping(ApplyPagination(ApplyFilters(query, filters.Filters), filters.Page, filters.PageSize));
         }
-        return ApplyMapping(ApplyPagination(GetAllFromDatabase(), filters.Page, filters.PageSize));
+        return ApplyMapping(ApplyPagination(query, filters.Page, filters.PageSize));
     }
 
     public IQueryable<TicketPurchaseResponseDTO> Get(int id)
@@ -76,7 +93,7 @@ public class TicketPurchaseService : BaseService, ITicketPurchaseService
         else
         {
             // Calculate age from EGN (Bulgarian personal ID)
-            int age = CalculateAgeFromEGN(person.EGN);
+            int age = CalculateAgeFromEGN(person.EGN ?? string.Empty);
 
             // Apply age-based pricing
             if (age < 14)

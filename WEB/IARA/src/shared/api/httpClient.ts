@@ -42,7 +42,21 @@ class HttpClient {
     if (!response.ok) {
       let errorData: ErrorResponse;
       try {
-        errorData = await response.json();
+        const text = await response.text();
+        console.log('Error response body:', text);
+        console.log('Error response status:', response.status);
+        console.log('Error response headers:', Object.fromEntries(response.headers.entries()));
+        
+        // Try to parse as JSON first
+        try {
+          errorData = JSON.parse(text);
+        } catch {
+          // If not JSON, use the plain text as the message
+          errorData = {
+            statusCode: response.status,
+            message: text || response.statusText || 'An error occurred',
+          };
+        }
       } catch {
         errorData = {
           statusCode: response.status,

@@ -24,6 +24,11 @@ public interface IUserService
     /// Deletes a user by ID
     /// </summary>
     bool Delete(string id);
+    
+    /// <summary>
+    /// Unbans a user by ID (sets IsActive to true)
+    /// </summary>
+    bool Unban(string id);
 }
 
 

@@ -49,6 +49,16 @@ public class UserController : Controller
     {
         return Ok(_userService.Delete(id));
     }
+
+    /// <summary>
+    /// Unbans a user (Admin only)
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = "Admin")] // Only admins can unban users
+    public IActionResult Unban([FromQuery] string id)
+    {
+        return Ok(_userService.Unban(id));
+    }
 }
 
 

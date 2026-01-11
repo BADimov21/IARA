@@ -69,4 +69,8 @@ export const personApi = {
       API_ENDPOINTS.PERSON.HAS_COMPLETED_INFO
     );
   },
+
+  getTelkDecisions: async (): Promise<any[]> => {
+    return httpClient.get<any[]>(API_ENDPOINTS.TELK.GET_ALL_FOR_USER);
+  },
 };

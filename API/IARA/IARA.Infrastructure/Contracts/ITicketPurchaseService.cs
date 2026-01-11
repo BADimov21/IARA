@@ -7,7 +7,7 @@ namespace IARA.Infrastructure.Contracts;
 
 public interface ITicketPurchaseService
 {
-    IQueryable<TicketPurchaseResponseDTO> GetAll(BaseFilter<TicketPurchaseFilter> filters);
+    IQueryable<TicketPurchaseResponseDTO> GetAll(BaseFilter<TicketPurchaseFilter> filters, string? userId, bool isAdmin);
     IQueryable<TicketPurchaseResponseDTO> Get(int id);
     int Add(TicketPurchaseCreateRequestDTO dto);
     bool Delete(int id);

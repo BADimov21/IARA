@@ -44,6 +44,19 @@ public class TELKDecisionService : BaseService, ITELKDecisionService
         return ApplyMapping(GetAllFromDatabase().Where(t => t.Id == id));
     }
 
+    public IQueryable<TELKDecisionResponseDTO> GetAllForCurrentUser(string userId)
+    {
+        // Get current user's person ID
+        var user = Db.Users.FirstOrDefault(u => u.Id == userId);
+        
+        if (user == null || !user.PersonId.HasValue)
+        {
+            return Enumerable.Empty<TELKDecisionResponseDTO>().AsQueryable();
+        }
+        
+        return ApplyMapping(GetAllFromDatabase().Where(t => t.PersonId == user.PersonId.Value));
+    }
+
     public int Add(TELKDecisionCreateRequestDTO dto)
     {
         var telkDecision = new TELKDecision

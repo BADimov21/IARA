@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
     GET_ALL: '/user/getall',
     GET: '/user/get',
     DELETE: '/user/delete',
+    UNBAN: '/user/unban',
   },
   // Nomenclatures
   FISH_SPECY: {
@@ -139,6 +140,14 @@ export const API_ENDPOINTS = {
     HAS_COMPLETED_INFO: '/person/hascompletedpersonalinfo',
   },
   // TELK Module
+  TELK: {
+    GET_ALL: '/telkdecision/getall',
+    GET: '/telkdecision/get',
+    ADD: '/telkdecision/add',
+    EDIT: '/telkdecision/edit',
+    DELETE: '/telkdecision/delete',
+    GET_ALL_FOR_USER: '/telkdecision/getallforcurrentuser',
+  },
   TELK_DECISION: {
     GET_ALL: '/telkdecision/getall',
     GET: '/telkdecision/get',

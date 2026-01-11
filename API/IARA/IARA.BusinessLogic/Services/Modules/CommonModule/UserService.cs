@@ -56,9 +56,23 @@ public class UserService : BaseService, IUserService
         return false;
     }
 
+    public bool Unban(string id)
+    {
+        var user = _userManager.Users.FirstOrDefault(u => u.Id == id);
+        if (user != null)
+        {
+            // Unban user by setting IsActive back to true
+            user.IsActive = true;
+            var result = _userManager.UpdateAsync(user).Result;
+            return result.Succeeded;
+        }
+        return false;
+    }
+
     private IQueryable<User> GetAllFromDatabase()
     {
-        return _userManager.Users.Where(u => u.IsActive == true);
+        // Show all users, including banned ones
+        return _userManager.Users;
     }
 
     private IQueryable<User> ApplyPagination(IQueryable<User> query, int page, int pageSize)

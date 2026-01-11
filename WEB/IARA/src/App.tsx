@@ -167,11 +167,11 @@ function App() {
                     {/* Users - Admin Only */}
                     <Route path="/users" element={<AdminRoute><UserList /></AdminRoute>} />
                     
-                    {/* Nomenclatures */}
-                    <Route path="/nomenclatures/fish-species" element={<FishSpecyList />} />
-                    <Route path="/nomenclatures/engine-types" element={<EngineTypeList />} />
-                    <Route path="/nomenclatures/fishing-gear-types" element={<FishingGearTypeList />} />
-                    <Route path="/nomenclatures/ticket-types" element={<TicketTypeList />} />
+                    {/* Nomenclatures - Admin Only */}
+                    <Route path="/nomenclatures/fish-species" element={<AdminRoute><FishSpecyList /></AdminRoute>} />
+                    <Route path="/nomenclatures/engine-types" element={<AdminRoute><EngineTypeList /></AdminRoute>} />
+                    <Route path="/nomenclatures/fishing-gear-types" element={<AdminRoute><FishingGearTypeList /></AdminRoute>} />
+                    <Route path="/nomenclatures/ticket-types" element={<AdminRoute><TicketTypeList /></AdminRoute>} />
                     
                     {/* Fishing */}
                     <Route path="/fishing/trips" element={<FishingTripList />} />
@@ -180,20 +180,20 @@ function App() {
                     <Route path="/fishing/operations" element={<FishingOperationList />} />
                     <Route path="/fishing/permits" element={<FishingPermitList />} />
                     
-                    {/* Batches */}
-                    <Route path="/batches/fish-batches" element={<FishBatchList />} />
-                    <Route path="/batches/landings" element={<LandingList />} />
-                    <Route path="/batches/locations" element={<BatchLocationList />} />
+                    {/* Batches - Admin Only */}
+                    <Route path="/batches/fish-batches" element={<AdminRoute><FishBatchList /></AdminRoute>} />
+                    <Route path="/batches/landings" element={<AdminRoute><LandingList /></AdminRoute>} />
+                    <Route path="/batches/locations" element={<AdminRoute><BatchLocationList /></AdminRoute>} />
                     
                     {/* Registry */}
                     <Route path="/registry/persons" element={<AdminRoute><PersonList /></AdminRoute>} />
-                    <Route path="/registry/vessels" element={<VesselList />} />
-                    <Route path="/registry/telk-decisions" element={<TELKDecisionList />} />
+                    <Route path="/registry/vessels" element={<AdminRoute><VesselList /></AdminRoute>} />
+                    <Route path="/registry/telk-decisions" element={<AdminRoute><TELKDecisionList /></AdminRoute>} />
                     
                     {/* Inspections */}
                     <Route path="/inspections" element={<InspectionList />} />
-                    <Route path="/inspections/inspectors" element={<InspectorList />} />
-                    <Route path="/inspections/violations" element={<ViolationList />} />
+                    <Route path="/inspections/inspectors" element={<AdminRoute><InspectorList /></AdminRoute>} />
+                    <Route path="/inspections/violations" element={<AdminRoute><ViolationList /></AdminRoute>} />
                     
                     {/* Recreational Fishing */}
                     <Route path="/recreational/catches" element={<RecreationalCatchList />} />
