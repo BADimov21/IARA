@@ -24,6 +24,8 @@ public partial class FishBatch
     [Column(TypeName = "decimal(10, 2)")]
     public decimal WeightKg { get; set; }
 
+    public int? Quantity { get; set; }
+
     [InverseProperty("Batch")]
     public virtual ICollection<BatchLocation> BatchLocations { get; set; } = new List<BatchLocation>();
 

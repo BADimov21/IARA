@@ -65,6 +65,14 @@ export interface FishingGearTypeFilter {
   typeName?: string;
 }
 
+export interface FishingGearTypeResponseDTO {
+  id: number;
+  name: string;
+  typeName?: string;
+  code?: string;
+  description?: string;
+}
+
 // ==================== Ticket Type ====================
 
 export interface TicketTypeCreateRequestDTO {

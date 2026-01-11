@@ -52,7 +52,8 @@ public class FishBatchService : BaseService, IFishBatchService
             BatchCode = dto.BatchCode,
             LandingId = dto.LandingId,
             SpeciesId = dto.SpeciesId,
-            WeightKg = dto.WeightKg
+            WeightKg = dto.WeightKg,
+            Quantity = dto.Quantity
         };
 
         Db.FishBatches.Add(batch);
@@ -69,13 +70,24 @@ public class FishBatchService : BaseService, IFishBatchService
         batch.LandingId = dto.LandingId;
         batch.SpeciesId = dto.SpeciesId;
         batch.WeightKg = dto.WeightKg;
+        batch.Quantity = dto.Quantity;
 
         return Db.SaveChanges() > 0;
     }
 
     public bool Delete(int id)
     {
-        Db.FishBatches.Remove(GetAllFromDatabase().Where(b => b.Id == id).Single());
+        var batch = GetAllFromDatabase().Where(b => b.Id == id).Single();
+        
+        // Delete all related batch locations first
+        var relatedLocations = Db.BatchLocations.Where(bl => bl.BatchId == id).ToList();
+        if (relatedLocations.Any())
+        {
+            Db.BatchLocations.RemoveRange(relatedLocations);
+        }
+        
+        // Now delete the fish batch
+        Db.FishBatches.Remove(batch);
         return Db.SaveChanges() > 0;
     }
 
@@ -100,6 +112,7 @@ public class FishBatchService : BaseService, IFishBatchService
                     SpeciesId = batch.SpeciesId,
                     BatchCode = batch.BatchCode,
                     WeightKg = batch.WeightKg,
+                    Quantity = batch.Quantity,
                     Species = new NomenclatureDTO
                     {
                         Id = species.Id,

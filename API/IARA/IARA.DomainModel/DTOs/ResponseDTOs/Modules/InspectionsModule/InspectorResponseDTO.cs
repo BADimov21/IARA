@@ -11,6 +11,7 @@ public class InspectorResponseDTO
     public int PersonId { get; set; }
     public PersonResponseDTO Person { get; set; } = null!;
     public string BadgeNumber { get; set; } = null!;
+    public string? Phone { get; set; }
 }
 
 

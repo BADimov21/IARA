@@ -50,7 +50,8 @@ public class LandingService : BaseService, ILandingService
         {
             TripId = dto.TripId,
             LandingDateTime = dto.LandingDateTime,
-            Port = dto.Port
+            Port = dto.Port,
+            TotalWeightKg = dto.TotalWeightKg
         };
 
         Db.Landings.Add(landing);
@@ -66,13 +67,24 @@ public class LandingService : BaseService, ILandingService
         landing.TripId = dto.TripId;
         landing.LandingDateTime = dto.LandingDateTime;
         landing.Port = dto.Port;
+        landing.TotalWeightKg = dto.TotalWeightKg;
 
         return Db.SaveChanges() > 0;
     }
 
     public bool Delete(int id)
     {
-        Db.Landings.Remove(GetAllFromDatabase().Where(l => l.Id == id).Single());
+        var landing = GetAllFromDatabase().Where(l => l.Id == id).Single();
+        
+        // Delete all related fish batches first
+        var relatedBatches = Db.FishBatches.Where(fb => fb.LandingId == id).ToList();
+        if (relatedBatches.Any())
+        {
+            Db.FishBatches.RemoveRange(relatedBatches);
+        }
+        
+        // Now delete the landing
+        Db.Landings.Remove(landing);
         return Db.SaveChanges() > 0;
     }
 
@@ -94,7 +106,8 @@ public class LandingService : BaseService, ILandingService
                     Id = landing.Id,
                     TripId = landing.TripId,
                     LandingDateTime = landing.LandingDateTime,
-                    Port = landing.Port
+                    Port = landing.Port,
+                    TotalWeightKg = landing.TotalWeightKg
                 });
     }
 

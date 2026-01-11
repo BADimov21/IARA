@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { landingApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
+import { landingApi, fishingTripApi } from '../../../shared/api';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel, Select } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
@@ -10,10 +10,13 @@ import type { FilterField } from '../../shared/FilterPanel/FilterPanel';
 
 interface LandingItem {
   id: number;
-  fishingTripId?: string;
+  tripId?: number;
+  fishingTripId?: number | string;
   landingDate?: string;
+  landingDateTime?: string;
   port?: string;
   totalWeight?: number;
+  totalWeightKg?: number;
 }
 
 export const LandingList: React.FC = () => {
@@ -26,6 +29,7 @@ export const LandingList: React.FC = () => {
   const [editingItem, setEditingItem] = useState<LandingItem | null>(null);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [fishingTrips, setFishingTrips] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     fishingTripId: '',
     landingDate: '',
@@ -45,7 +49,18 @@ export const LandingList: React.FC = () => {
 
   useEffect(() => {
     loadLandings();
+    loadFishingTrips();
   }, []);
+
+  const loadFishingTrips = async () => {
+    try {
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await fishingTripApi.getAll(filters);
+      setFishingTrips(data);
+    } catch (error) {
+      console.error('Failed to load fishing trips:', error);
+    }
+  };
 
   const loadLandings = async (customFilters?: LandingFilter) => {
     try {
@@ -90,11 +105,14 @@ export const LandingList: React.FC = () => {
   const handleEdit = (item: LandingItem) => {
     if (!canEdit(role, 'landings')) return;
     setEditingItem(item);
+    const date = item.landingDateTime || item.landingDate;
+    const weight = item.totalWeightKg || item.totalWeight;
+    const tripId = item.tripId || item.fishingTripId;
     setFormData({
-      fishingTripId: item.fishingTripId || '',
-      landingDate: item.landingDate ? item.landingDate.split('T')[0] : '',
+      fishingTripId: tripId?.toString() || '',
+      landingDate: date ? (typeof date === 'string' ? date.split('T')[0] : new Date(date).toISOString().split('T')[0]) : '',
       port: item.port || '',
-      totalWeight: item.totalWeight?.toString() || '',
+      totalWeight: weight?.toString() || '',
     });
     setIsModalOpen(true);
   };
@@ -124,33 +142,58 @@ export const LandingList: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEdit(role, 'landings')) return;
+    
+    // Validation
+    if (!formData.fishingTripId) {
+      toast.error('Please select a fishing trip');
+      return;
+    }
+    if (!formData.landingDate) {
+      toast.error('Please enter the landing date');
+      return;
+    }
+    if (!formData.port.trim()) {
+      toast.error('Please enter the port name');
+      return;
+    }
+    if (!formData.totalWeight || parseFloat(formData.totalWeight) <= 0) {
+      toast.error('Please enter a valid total weight');
+      return;
+    }
+    
     try {
       const payload = {
         tripId: Number(formData.fishingTripId),
         landingDateTime: formData.landingDate ? new Date(formData.landingDate).toISOString() : '',
         port: formData.port,
-        totalWeight: formData.totalWeight ? parseFloat(formData.totalWeight) : 0,
+        totalWeightKg: parseFloat(formData.totalWeight),
       };
       if (editingItem) {
         await landingApi.edit({ id: editingItem.id, ...payload });
         toast.success('Landing updated successfully');
       } else {
         await landingApi.add(payload);
-        toast.success('Landing added successfully');
+        toast.success('Landing recorded successfully');
       }
       setIsModalOpen(false);
       await loadLandings();
     } catch (error) {
       console.error('Failed to save:', error);
-      toast.error('Failed to save landing');
+      toast.error(editingItem ? 'Failed to update landing' : 'Failed to record landing');
     }
   };
 
   const columns: Column<LandingItem>[] = [
     { key: 'id', header: 'ID', width: '80px' },
-    { key: 'landingDate', header: 'Date', render: (item) => item.landingDate ? new Date(item.landingDate).toLocaleDateString() : '-' },
+    { key: 'landingDate', header: 'Date', render: (item) => {
+      const date = item.landingDateTime || item.landingDate;
+      return date ? new Date(date).toLocaleDateString() : '-';
+    }},
     { key: 'port', header: 'Port' },
-    { key: 'totalWeight', header: 'Total Weight (kg)', render: (item) => item.totalWeight ? `${item.totalWeight} kg` : '-' },
+    { key: 'totalWeight', header: 'Total Weight (kg)', render: (item) => {
+      const weight = item.totalWeightKg || item.totalWeight;
+      return weight ? `${weight} kg` : '-';
+    }},
     {
       key: 'actions',
       header: 'Actions',
@@ -191,17 +234,66 @@ export const LandingList: React.FC = () => {
       </Card>
 
       {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Landing' : 'Add Landing'} size="large">
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Landing' : 'Record Landing'} size="large">
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <Input label="Fishing Trip ID" value={formData.fishingTripId} onChange={(e) => setFormData({ ...formData, fishingTripId: e.target.value })} required fullWidth />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Input label="Landing Date" type="date" value={formData.landingDate} onChange={(e) => setFormData({ ...formData, landingDate: e.target.value })} required fullWidth />
-              <Input label="Port" value={formData.port} onChange={(e) => setFormData({ ...formData, port: e.target.value })} required fullWidth />
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#4338ca' }}>
+              <strong>📦 Recording a Landing</strong>
+              <p style={{ margin: '0.5rem 0 0 0' }}>Record when fish are landed at a port after a fishing trip. This tracks the total weight of fish brought to shore.</p>
             </div>
-            <Input label="Total Weight (kg)" type="number" step="0.01" value={formData.totalWeight} onChange={(e) => setFormData({ ...formData, totalWeight: e.target.value })} required fullWidth />
+
+            <Select
+              label="Fishing Trip"
+              value={formData.fishingTripId}
+              onChange={(e) => setFormData({ ...formData, fishingTripId: e.target.value })}
+              required
+              fullWidth
+              helperText="Select the fishing trip that returned with this catch"
+              options={[
+                { value: '', label: '-- Select Fishing Trip --' },
+                ...fishingTrips.map((trip: any) => ({
+                  value: trip.id.toString(),
+                  label: `Trip #${trip.id} - ${trip.departureDateTime ? new Date(trip.departureDateTime).toLocaleDateString() : 'N/A'} ${trip.vessel?.vesselName ? `(${trip.vessel.vesselName})` : ''}`
+                }))
+              ]}
+            />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <Input 
+                label="Landing Date" 
+                type="date" 
+                value={formData.landingDate} 
+                onChange={(e) => setFormData({ ...formData, landingDate: e.target.value })} 
+                required 
+                fullWidth 
+                helperText="When the fish were landed"
+                max={new Date().toISOString().split('T')[0]}
+              />
+              <Input 
+                label="Port" 
+                value={formData.port} 
+                onChange={(e) => setFormData({ ...formData, port: e.target.value })} 
+                required 
+                fullWidth 
+                placeholder="e.g., Burgas, Varna"
+                helperText="Port where fish were landed"
+              />
+            </div>
+
+            <Input 
+              label="Total Weight (kg)" 
+              type="number" 
+              step="0.01" 
+              value={formData.totalWeight} 
+              onChange={(e) => setFormData({ ...formData, totalWeight: e.target.value })} 
+              required 
+              fullWidth 
+              min="0.01"
+              placeholder="0.00"
+              helperText="Total weight of all fish landed (kg)"
+            />
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>
+              <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Record Landing'}</Button>
             </div>
           </form>
         </Modal>

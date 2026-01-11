@@ -11,6 +11,7 @@ public class FishBatchUpdateRequestDTO : BaseDTO
     public int LandingId { get; set; }
     public int SpeciesId { get; set; }
     public decimal WeightKg { get; set; }
+    public int? Quantity { get; set; }
 }
 
 

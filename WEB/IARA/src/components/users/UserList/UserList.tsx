@@ -92,9 +92,9 @@ export const UserList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
-      title: 'Delete User',
-      message: 'Are you sure you want to delete this user? This action cannot be undone.',
-      confirmText: 'Delete',
+      title: 'Ban User',
+      message: 'Are you sure you want to ban this user? They will no longer be able to log in and will be hidden from the user list.',
+      confirmText: 'Ban User',
       variant: 'danger',
     });
     
@@ -102,11 +102,11 @@ export const UserList: React.FC = () => {
 
     try {
       await userApi.delete(id);
-      toast.success('User deleted successfully');
+      toast.success('User banned successfully');
       await loadUsers();
     } catch (error) {
-      console.error('Failed to delete:', error);
-      toast.error('Failed to delete user');
+      console.error('Failed to ban user:', error);
+      toast.error('Failed to ban user');
     }
   };
 
@@ -136,7 +136,7 @@ export const UserList: React.FC = () => {
       render: (item) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <Button size="small" variant="primary" onClick={() => handleEdit(item)}>Edit</Button>
-          <Button size="small" variant="danger" onClick={() => handleDelete(item.userId)}>Delete</Button>
+          <Button size="small" variant="danger" onClick={() => handleDelete(item.userId)}>Ban</Button>
         </div>
       ),
     },

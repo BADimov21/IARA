@@ -10,6 +10,9 @@ public class ViolationCreateRequestDTO
     [Required]
     public int InspectionId { get; set; }
 
+    [MaxLength(100)]
+    public string? ViolationType { get; set; }
+
     [Required]
     [MaxLength(500)]
     public string Description { get; set; } = null!;

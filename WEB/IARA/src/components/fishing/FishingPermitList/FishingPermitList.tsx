@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { fishingPermitApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
+import { fishingPermitApi, vesselApi } from '../../../shared/api';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel, Select } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
@@ -27,6 +27,7 @@ export const FishingPermitList: React.FC = () => {
   const [editingItem, setEditingItem] = useState<FishingPermitItem | null>(null);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [vessels, setVessels] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     vesselId: '',
     permitNumber: '',
@@ -44,7 +45,18 @@ export const FishingPermitList: React.FC = () => {
 
   useEffect(() => {
     loadPermits();
+    loadVessels();
   }, []);
+
+  const loadVessels = async () => {
+    try {
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await vesselApi.getAll(filters);
+      setVessels(data);
+    } catch (error) {
+      console.error('Failed to load vessels:', error);
+    }
+  };
 
   const loadPermits = async (customFilters?: FishingPermitFilter) => {
     try {
@@ -127,6 +139,29 @@ export const FishingPermitList: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEdit(role, 'fishingPermits')) return;
+    
+    // Validation
+    if (!formData.vesselId) {
+      toast.error('Please select a vessel');
+      return;
+    }
+    if (!formData.permitNumber.trim()) {
+      toast.error('Please enter a permit number');
+      return;
+    }
+    if (!formData.issueDate) {
+      toast.error('Please enter the issue date');
+      return;
+    }
+    if (!formData.expiryDate) {
+      toast.error('Please enter the expiry date');
+      return;
+    }
+    if (new Date(formData.expiryDate) <= new Date(formData.issueDate)) {
+      toast.error('Expiry date must be after issue date');
+      return;
+    }
+    
     try {
       const payload = {
         vesselId: Number(formData.vesselId),
@@ -136,26 +171,53 @@ export const FishingPermitList: React.FC = () => {
         validUntil: formData.expiryDate ? new Date(formData.expiryDate).toISOString() : '',
       };
       if (editingItem) {
-        console.log('Edit not supported - API only has add and revoke');
-        toast.warning('Edit not supported for fishing permits');
+        toast.info('Fishing permits cannot be edited once issued. Use the Revoke button if needed.');
+        setIsModalOpen(false);
+        return;
       } else {
         await fishingPermitApi.add(payload);
-        toast.success('Fishing permit added successfully');
+        toast.success('Fishing permit issued successfully');
       }
       setIsModalOpen(false);
       await loadPermits();
     } catch (error) {
       console.error('Failed to save:', error);
-      toast.error('Failed to save fishing permit');
+      toast.error('Failed to issue fishing permit');
     }
   };
 
   const columns: Column<FishingPermitItem>[] = [
     { key: 'id', header: 'ID', width: '80px' },
-    { key: 'permitNumber', header: 'Permit Number' },
-    { key: 'vesselName', header: 'Vessel' },
-    { key: 'issueDate', header: 'Issue Date', render: (item) => item.issueDate ? new Date(item.issueDate).toLocaleDateString() : '-' },
-    { key: 'expiryDate', header: 'Expiry Date', render: (item) => item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : '-' },
+    { 
+      key: 'permitNumber', 
+      header: 'Permit Number',
+      render: (item: any) => item.permitNumber || '-'
+    },
+    { 
+      key: 'vesselName', 
+      header: 'Vessel',
+      render: (item: any) => item.vessel?.vesselName || item.vessel?.name || item.vesselName || '-'
+    },
+    { 
+      key: 'issueDate', 
+      header: 'Issue Date', 
+      render: (item: any) => {
+        const date = item.issueDate || item.validFrom;
+        if (!date) return '-';
+        const d = new Date(date);
+        return !isNaN(d.getTime()) ? d.toLocaleDateString() : '-';
+      }
+    },
+    { 
+      key: 'expiryDate', 
+      header: 'Expiry Date', 
+      render: (item: any) => {
+        const date = item.validUntil || item.expiryDate;
+        if (!date) return '-';
+        const d = new Date(date);
+        return !isNaN(d.getTime()) ? d.toLocaleDateString() : '-';
+      }
+    },
     {
       key: 'actions',
       header: 'Actions',
@@ -196,19 +258,64 @@ export const FishingPermitList: React.FC = () => {
       </Card>
 
       {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Permit' : 'Add Permit'} size="large">
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Permit' : 'Issue Fishing Permit'} size="large">
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Input label="Permit Number" value={formData.permitNumber} onChange={(e) => setFormData({ ...formData, permitNumber: e.target.value })} required fullWidth />
-              <Input label="Vessel ID" value={formData.vesselId} onChange={(e) => setFormData({ ...formData, vesselId: e.target.value })} required fullWidth />
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#4338ca' }}>
+              <strong>📋 Issuing a Fishing Permit</strong>
+              <p style={{ margin: '0.5rem 0 0 0' }}>A fishing permit authorizes a vessel to conduct commercial fishing operations. Select the vessel and specify the permit validity period.</p>
             </div>
+
+            <Select
+              label="Vessel"
+              value={formData.vesselId}
+              onChange={(e) => setFormData({ ...formData, vesselId: e.target.value })}
+              required
+              fullWidth
+              helperText="Select the vessel for this permit"
+              options={[
+                { value: '', label: '-- Select Vessel --' },
+                ...vessels.map((vessel: any) => ({
+                  value: vessel.id.toString(),
+                  label: `${vessel.vesselName || vessel.name || 'Unknown'} (CFR: ${vessel.internationalNumber || vessel.cfr || 'N/A'})`
+                }))
+              ]}
+            />
+
+            <Input 
+              label="Permit Number" 
+              value={formData.permitNumber} 
+              onChange={(e) => setFormData({ ...formData, permitNumber: e.target.value })} 
+              required 
+              fullWidth 
+              placeholder="e.g., FP-2026-001"
+              helperText="Unique identifier for this permit"
+            />
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Input label="Issue Date" type="date" value={formData.issueDate} onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })} required fullWidth />
-              <Input label="Expiry Date" type="date" value={formData.expiryDate} onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })} required fullWidth />
+              <Input 
+                label="Issue Date" 
+                type="date" 
+                value={formData.issueDate} 
+                onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })} 
+                required 
+                fullWidth 
+                helperText="When the permit is issued"
+                max={formData.expiryDate || undefined}
+              />
+              <Input 
+                label="Expiry Date" 
+                type="date" 
+                value={formData.expiryDate} 
+                onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })} 
+                required 
+                fullWidth 
+                helperText="When the permit expires"
+                min={formData.issueDate || undefined}
+              />
             </div>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>
+              <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Issue Permit'}</Button>
             </div>
           </form>
         </Modal>

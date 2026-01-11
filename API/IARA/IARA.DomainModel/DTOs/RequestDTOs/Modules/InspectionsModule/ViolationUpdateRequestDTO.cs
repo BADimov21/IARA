@@ -8,6 +8,7 @@ namespace IARA.DomainModel.DTOs.RequestDTOs.Modules.InspectionsModule;
 public class ViolationUpdateRequestDTO : BaseDTO
 {
     public int InspectionId { get; set; }
+    public string? ViolationType { get; set; }
     public string Description { get; set; } = string.Empty;
     public decimal? FineAmount { get; set; }
     public bool? IsPaid { get; set; }

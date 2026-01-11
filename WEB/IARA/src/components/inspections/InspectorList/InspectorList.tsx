@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { inspectorApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
+import { inspectorApi, personApi } from '../../../shared/api';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel, Select } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
@@ -15,6 +15,7 @@ interface InspectorItem {
   badgeNumber?: string;
   phone?: string;
   personId?: number;
+  person?: { id: number; firstName?: string; lastName?: string; egn?: string; phone?: string; phoneNumber?: string };
 }
 
 export const InspectorList: React.FC = () => {
@@ -25,7 +26,9 @@ export const InspectorList: React.FC = () => {
   const [editingItem, setEditingItem] = useState<InspectorItem | null>(null);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [persons, setPersons] = useState<any[]>([]);
   const [formData, setFormData] = useState({
+    personId: '',
     firstName: '',
     lastName: '',
     badgeNumber: '',
@@ -41,7 +44,18 @@ export const InspectorList: React.FC = () => {
 
   useEffect(() => {
     loadInspectors();
+    loadPersons();
   }, []);
+
+  const loadPersons = async () => {
+    try {
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await personApi.getAll(filters);
+      setPersons(data);
+    } catch (error) {
+      console.error('Failed to load persons:', error);
+    }
+  };
 
   const loadInspectors = async (customFilters?: InspectorFilter) => {
     try {
@@ -83,7 +97,7 @@ export const InspectorList: React.FC = () => {
   const handleAdd = () => {
     if (!canCreate(role, 'inspectors')) return;
     setEditingItem(null);
-    setFormData({ firstName: '', lastName: '', badgeNumber: '', phone: '' });
+    setFormData({ personId: '', firstName: '', lastName: '', badgeNumber: '', phone: '' });
     setIsModalOpen(true);
   };
 
@@ -91,6 +105,7 @@ export const InspectorList: React.FC = () => {
     if (!canEdit(role, 'inspectors')) return;
     setEditingItem(item);
     setFormData({
+      personId: item.personId?.toString() || '',
       firstName: item.firstName || '',
       lastName: item.lastName || '',
       badgeNumber: item.badgeNumber || '',
@@ -124,13 +139,31 @@ export const InspectorList: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEdit(role, 'inspectors')) return;
+    
+    // Validation
+    if (!formData.personId && !editingItem) {
+      toast.error('Please select a person');
+      return;
+    }
+    if (!formData.badgeNumber.trim()) {
+      toast.error('Please enter a badge number');
+      return;
+    }
+    if (!formData.phone.trim()) {
+      toast.error('Please enter a phone number');
+      return;
+    }
+    
     try {
+      const payload = {
+        personId: Number(formData.personId),
+        badgeNumber: formData.badgeNumber,
+        phone: formData.phone,
+      };
       if (editingItem) {
-        await inspectorApi.edit({ id: editingItem.id, ...formData });
+        await inspectorApi.edit({ id: editingItem.id, ...payload });
         toast.success('Inspector updated successfully');
       } else {
-        // API requires personId which we don't have in form - need to add
-        const payload = { ...formData, personId: 1 }; // Placeholder
         await inspectorApi.add(payload);
         toast.success('Inspector added successfully');
       }
@@ -138,16 +171,19 @@ export const InspectorList: React.FC = () => {
       await loadInspectors();
     } catch (error) {
       console.error('Failed to save:', error);
-      toast.error('Failed to save inspector');
+      toast.error(editingItem ? 'Failed to update inspector' : 'Failed to add inspector');
     }
   };
 
   const columns: Column<InspectorItem>[] = [
     { key: 'id', header: 'ID', width: '80px' },
     { key: 'badgeNumber', header: 'Badge Number' },
-    { key: 'firstName', header: 'First Name' },
-    { key: 'lastName', header: 'Last Name' },
-    { key: 'phone', header: 'Phone' },
+    { key: 'firstName', header: 'First Name', render: (item) => {
+      return item.person?.firstName || item.firstName || '-';
+    }},
+    { key: 'lastName', header: 'Last Name', render: (item) => {
+      return item.person?.lastName || item.lastName || '-';
+    }},
     {
       key: 'actions',
       header: 'Actions',
@@ -192,17 +228,82 @@ export const InspectorList: React.FC = () => {
       {isModalOpen && (
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Inspector' : 'Add Inspector'} size="large">
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Input label="First Name" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} required fullWidth />
-              <Input label="Last Name" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} required fullWidth />
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#4338ca' }}>
+              <strong>👮 Register an Inspector</strong>
+              <p style={{ margin: '0.5rem 0 0 0' }}>Add authorized fisheries inspectors who conduct vessel inspections and enforce fishing regulations.</p>
             </div>
+
+            {!editingItem && (
+              <Select
+                label="Person"
+                value={formData.personId}
+                onChange={(e) => {
+                  const person = persons.find(p => p.id === Number(e.target.value));
+                  setFormData({ 
+                    ...formData, 
+                    personId: e.target.value,
+                    firstName: person?.firstName || '',
+                    lastName: person?.lastName || '',
+                    phone: person?.phone || formData.phone
+                  });
+                }}
+                required
+                fullWidth
+                helperText="Select the person to designate as an inspector"
+                options={[
+                  { value: '', label: '-- Select Person --' },
+                  ...persons.map((person: any) => ({
+                    value: person.id.toString(),
+                    label: `${person.firstName || ''} ${person.lastName || ''} - EGN: ${person.egn || 'N/A'}`.trim()
+                  }))
+                ]}
+              />
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Input label="Badge Number" value={formData.badgeNumber} onChange={(e) => setFormData({ ...formData, badgeNumber: e.target.value })} required fullWidth />
-              <Input label="Phone" type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required fullWidth />
+              <Input 
+                label="First Name" 
+                value={formData.firstName} 
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} 
+                disabled
+                fullWidth 
+                helperText="From selected person"
+              />
+              <Input 
+                label="Last Name" 
+                value={formData.lastName} 
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} 
+                disabled
+                fullWidth 
+                helperText="From selected person"
+              />
             </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <Input 
+                label="Badge Number" 
+                value={formData.badgeNumber} 
+                onChange={(e) => setFormData({ ...formData, badgeNumber: e.target.value })} 
+                required 
+                fullWidth 
+                placeholder="e.g., INS-2026-001"
+                helperText="Official inspector identification number"
+              />
+              <Input 
+                label="Phone" 
+                type="tel" 
+                value={formData.phone} 
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
+                required 
+                fullWidth 
+                placeholder="e.g., +359 888 123 456"
+                helperText="Contact phone number"
+              />
+            </div>
+
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>
+              <Button type="submit" variant="primary">{editingItem ? 'Update Inspector' : 'Add Inspector'}</Button>
             </div>
           </form>
         </Modal>

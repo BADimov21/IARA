@@ -93,6 +93,7 @@ public class InspectorService : BaseService, IInspectorService
                     Id = inspector.Id,
                     PersonId = person.Id,
                     BadgeNumber = inspector.BadgeNumber,
+                    Phone = person.PhoneNumber,
                     Person = new PersonResponseDTO
                     {
                         Id = person.Id,

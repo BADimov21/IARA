@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { inspectionApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
+import { inspectionApi, vesselApi, inspectorApi } from '../../../shared/api';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel, Select } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
@@ -10,11 +10,16 @@ import type { InspectionFilter, BaseFilter } from '../../../shared/types';
 
 interface InspectionItem {
   id: number;
-  inspectionDate: string;
-  inspectorId: number;
-  vesselId: number;
-  location: string;
-  observations: string;
+  inspectionDate?: string;
+  inspectionDateTime?: string;
+  inspectorId?: number;
+  inspector?: { id: number; firstName?: string; lastName?: string; badgeNumber?: string };
+  vesselId?: number;
+  vessel?: { id: number; vesselName?: string; name?: string; internationalNumber?: string; cfr?: string };
+  location?: string;
+  observations?: string;
+  inspectionType?: string;
+  isCompliant?: boolean;
 }
 
 export const InspectionList: React.FC = () => {
@@ -27,6 +32,8 @@ export const InspectionList: React.FC = () => {
   const [editingItem, setEditingItem] = useState<InspectionItem | null>(null);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [vessels, setVessels] = useState<any[]>([]);
+  const [inspectors, setInspectors] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     inspectorId: '',
     vesselId: '',
@@ -46,7 +53,29 @@ export const InspectionList: React.FC = () => {
 
   useEffect(() => {
     loadInspections();
+    loadVessels();
+    loadInspectors();
   }, []);
+
+  const loadVessels = async () => {
+    try {
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await vesselApi.getAll(filters);
+      setVessels(data);
+    } catch (error) {
+      console.error('Failed to load vessels:', error);
+    }
+  };
+
+  const loadInspectors = async () => {
+    try {
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await inspectorApi.getAll(filters);
+      setInspectors(data);
+    } catch (error) {
+      console.error('Failed to load inspectors:', error);
+    }
+  };
 
   const loadInspections = async (customFilters?: InspectionFilter) => {
     try {
@@ -93,6 +122,14 @@ export const InspectionList: React.FC = () => {
 
   const handleAdd = () => {
     if (!canCreate(role, 'inspections')) return;
+    if (inspectors.length === 0) {
+      toast.error('Please register at least one inspector before creating an inspection');
+      return;
+    }
+    if (vessels.length === 0) {
+      toast.error('Please register at least one vessel before creating an inspection');
+      return;
+    }
     setEditingItem(null);
     setFormData({ inspectorId: '', vesselId: '', inspectionDate: '', location: '', observations: '' });
     setIsModalOpen(true);
@@ -101,10 +138,13 @@ export const InspectionList: React.FC = () => {
   const handleEdit = (item: InspectionItem) => {
     if (!canEdit(role, 'inspections')) return;
     setEditingItem(item);
+    const date = item.inspectionDateTime || item.inspectionDate;
+    const inspectorId = item.inspector?.id || item.inspectorId;
+    const vesselId = item.vessel?.id || item.vesselId;
     setFormData({
-      inspectorId: String(item.inspectorId || ''),
-      vesselId: String(item.vesselId || ''),
-      inspectionDate: item.inspectionDate ? item.inspectionDate.split('T')[0] : '',
+      inspectorId: inspectorId?.toString() || '',
+      vesselId: vesselId?.toString() || '',
+      inspectionDate: date ? (typeof date === 'string' ? date.split('T')[0] : new Date(date).toISOString().split('T')[0]) : '',
       location: item.location || '',
       observations: item.observations || '',
     });
@@ -136,6 +176,25 @@ export const InspectionList: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEdit(role, 'inspections')) return;
+    
+    // Validation
+    if (!formData.inspectorId) {
+      toast.error('Please select an inspector');
+      return;
+    }
+    if (!formData.vesselId) {
+      toast.error('Please select a vessel');
+      return;
+    }
+    if (!formData.inspectionDate) {
+      toast.error('Please enter the inspection date');
+      return;
+    }
+    if (!formData.location.trim()) {
+      toast.error('Please enter the inspection location');
+      return;
+    }
+    
     try {
       const payload = {
         inspectorId: Number(formData.inspectorId),
@@ -151,22 +210,38 @@ export const InspectionList: React.FC = () => {
         toast.success('Inspection updated successfully');
       } else {
         await inspectionApi.add(payload);
-        toast.success('Inspection added successfully');
+        toast.success('Inspection recorded successfully');
       }
       setIsModalOpen(false);
       await loadInspections();
     } catch (error) {
       console.error('Failed to save:', error);
-      toast.error('Failed to save inspection');
+      toast.error(editingItem ? 'Failed to update inspection' : 'Failed to record inspection');
     }
   };
 
   const columns: Column<InspectionItem>[] = [
     { key: 'id', header: 'ID', width: '80px' },
-    { key: 'inspectionDate', header: 'Date', render: (item) => item.inspectionDate ? new Date(item.inspectionDate).toLocaleDateString() : '-' },
-    { key: 'inspectorId', header: 'Inspector ID' },
-    { key: 'vesselId', header: 'Vessel ID' },
+    { key: 'inspectionDate', header: 'Date', render: (item) => {
+      const date = item.inspectionDateTime || item.inspectionDate;
+      return date ? new Date(date).toLocaleDateString() : '-';
+    }},
+    { key: 'inspector', header: 'Inspector', render: (item) => {
+      if (item.inspector) {
+        return `${item.inspector.badgeNumber || `#${item.inspector.id}`} - ${item.inspector.firstName || ''} ${item.inspector.lastName || ''}`.trim();
+      }
+      return item.inspectorId ? `Inspector #${item.inspectorId}` : '-';
+    }},
+    { key: 'vessel', header: 'Vessel', render: (item) => {
+      if (item.vessel) {
+        const name = item.vessel.vesselName || item.vessel.name || 'Unknown';
+        const cfr = item.vessel.internationalNumber || item.vessel.cfr || 'No CFR';
+        return `${name} (${cfr})`;
+      }
+      return item.vesselId ? `Vessel #${item.vesselId}` : '-';
+    }},
     { key: 'location', header: 'Location' },
+    { key: 'observations', header: 'Observations', render: (item) => item.observations || '-' },
     {
       key: 'actions',
       header: 'Actions',
@@ -209,20 +284,81 @@ export const InspectionList: React.FC = () => {
       </Card>
 
       {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Inspection' : 'Add Inspection'} size="large">
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Inspection' : 'Record Inspection'} size="large">
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Input label="Inspector ID" value={formData.inspectorId} onChange={(e) => setFormData({ ...formData, inspectorId: e.target.value })} required fullWidth />
-              <Input label="Vessel ID" value={formData.vesselId} onChange={(e) => setFormData({ ...formData, vesselId: e.target.value })} required fullWidth />
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#4338ca' }}>
+              <strong>🔍 Recording an Inspection</strong>
+              <p style={{ margin: '0.5rem 0 0 0' }}>Document vessel inspections for regulatory compliance. Record inspection findings, compliance status, and any observations.</p>
             </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Input label="Inspection Date" type="date" value={formData.inspectionDate} onChange={(e) => setFormData({ ...formData, inspectionDate: e.target.value })} required fullWidth />
-              <Input label="Location" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} required fullWidth />
+              <Select
+                label="Inspector"
+                value={formData.inspectorId}
+                onChange={(e) => setFormData({ ...formData, inspectorId: e.target.value })}
+                required
+                fullWidth
+                helperText="Inspector conducting this inspection"
+                options={[
+                  { value: '', label: '-- Select Inspector --' },
+                  ...inspectors.map((inspector: any) => ({
+                    value: inspector.id.toString(),
+                    label: `${inspector.badgeNumber || `#${inspector.id}`} - ${inspector.firstName || ''} ${inspector.lastName || ''}`.trim()
+                  }))
+                ]}
+              />
+
+              <Select
+                label="Vessel"
+                value={formData.vesselId}
+                onChange={(e) => setFormData({ ...formData, vesselId: e.target.value })}
+                required
+                fullWidth
+                helperText="Vessel being inspected"
+                options={[
+                  { value: '', label: '-- Select Vessel --' },
+                  ...vessels.map((vessel: any) => ({
+                    value: vessel.id.toString(),
+                    label: `${vessel.vesselName || vessel.name || 'Unknown'} (${vessel.internationalNumber || vessel.cfr || 'No CFR'})`
+                  }))
+                ]}
+              />
             </div>
-            <Input label="Observations" value={formData.observations} onChange={(e) => setFormData({ ...formData, observations: e.target.value })} fullWidth />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <Input 
+                label="Inspection Date" 
+                type="date" 
+                value={formData.inspectionDate} 
+                onChange={(e) => setFormData({ ...formData, inspectionDate: e.target.value })} 
+                required 
+                fullWidth 
+                helperText="When the inspection was conducted"
+                max={new Date().toISOString().split('T')[0]}
+              />
+              <Input 
+                label="Location" 
+                value={formData.location} 
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })} 
+                required 
+                fullWidth 
+                placeholder="e.g., Burgas Port, At Sea - 42.5°N 27.5°E"
+                helperText="Where the inspection took place"
+              />
+            </div>
+
+            <Input 
+              label="Observations" 
+              value={formData.observations} 
+              onChange={(e) => setFormData({ ...formData, observations: e.target.value })} 
+              fullWidth 
+              placeholder="Additional findings or notes from the inspection..."
+              helperText="Optional notes about compliance, gear condition, or other findings"
+            />
+
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>
+              <Button type="submit" variant="primary">{editingItem ? 'Update Inspection' : 'Record Inspection'}</Button>
             </div>
           </form>
         </Modal>

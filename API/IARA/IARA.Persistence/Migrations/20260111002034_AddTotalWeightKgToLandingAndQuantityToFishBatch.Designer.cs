@@ -4,6 +4,7 @@ using IARA.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IARA.Persistence.Migrations
 {
     [DbContext(typeof(IARADbContext))]
-    partial class IARADbContextModelSnapshot : ModelSnapshot
+    [Migration("20260111002034_AddTotalWeightKgToLandingAndQuantityToFishBatch")]
+    partial class AddTotalWeightKgToLandingAndQuantityToFishBatch
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -371,14 +374,6 @@ namespace IARA.Persistence.Migrations
 
                     b.Property<bool>("IsCompliant")
                         .HasColumnType("bit");
-
-                    b.Property<string>("Location")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Observations")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<int?>("TicketPurchaseId")
                         .HasColumnType("int");
@@ -850,10 +845,6 @@ namespace IARA.Persistence.Migrations
 
                     b.Property<DateTime?>("PaidDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("ViolationType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id")
                         .HasName("PK__Violatio__3214EC07469064E3");

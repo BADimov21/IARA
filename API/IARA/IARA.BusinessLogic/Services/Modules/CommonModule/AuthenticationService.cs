@@ -87,6 +87,12 @@ public class AuthenticationService : IAuthenticationService
             throw new ArgumentException("Invalid username or password.");
         }
 
+        // Check if user is banned/deactivated after password is verified
+        if (!user.IsActive)
+        {
+            throw new ArgumentException("This account has been deactivated. Please contact an administrator.");
+        }
+
         // Update last login date
         user.LastLoginDate = DateTime.UtcNow;
         await _userManager.UpdateAsync(user);

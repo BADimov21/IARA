@@ -313,13 +313,13 @@ export const TicketPurchaseList: React.FC = () => {
       <Card
         title={role === 'Admin' ? 'All Ticket Purchases' : 'My Fishing Tickets'}
         subtitle="View and purchase recreational fishing tickets"
-        actions={canCreate(role, 'ticketPurchases') ? <Button variant="primary" onClick={handleAdd}>🎫 Purchase New Ticket</Button> : undefined}
+        actions={canCreate(role, 'ticketPurchases') ? <Button variant="primary" onClick={handleAdd}>🎫 Add New Ticket</Button> : undefined}
       >
         <Table columns={columns} data={purchases} />
       </Card>
 
       {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Purchase' : 'Purchase Fishing Ticket'} size="large">
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Ticket' : 'Add Fishing Ticket'} size="large">
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div style={{ padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', fontSize: '0.9rem', color: '#0369a1' }}>
               <strong>ℹ️ About Fishing Tickets:</strong>

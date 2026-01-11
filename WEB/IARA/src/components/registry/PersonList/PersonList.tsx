@@ -198,13 +198,17 @@ export const PersonList: React.FC = () => {
       {isModalOpen && (
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Person' : 'Add Person'} size="large">
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-              <Input label="First Name" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} required fullWidth />
-              <Input label="Middle Name" value={formData.middleName} onChange={(e) => setFormData({ ...formData, middleName: e.target.value })} fullWidth />
-              <Input label="Last Name" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} required fullWidth />
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#1e40af' }}>
+              <strong>ℹ️ Person Registry</strong>
+              <p style={{ margin: '0.5rem 0 0 0' }}>Register individuals in the system. This includes vessel owners, captains, fishermen, and inspectors. EGN (Unique Citizen Number) is required.</p>
             </div>
-            <Input label="EGN" value={formData.egn} onChange={(e) => setFormData({ ...formData, egn: e.target.value })} required fullWidth />
-            <Input label="Phone" type="tel" value={formData.phoneNumber} onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })} fullWidth />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+              <Input label="First Name" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} required fullWidth helperText="Person's legal first name" />
+              <Input label="Middle Name" value={formData.middleName} onChange={(e) => setFormData({ ...formData, middleName: e.target.value })} fullWidth helperText="Middle name (optional)" />
+              <Input label="Last Name" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} required fullWidth helperText="Person's family name" />
+            </div>
+            <Input label="EGN" value={formData.egn} onChange={(e) => setFormData({ ...formData, egn: e.target.value })} required fullWidth helperText="Unique Citizen Number (10 digits)" maxLength={10} />
+            <Input label="Phone" type="tel" value={formData.phoneNumber} onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })} fullWidth helperText="Contact phone number with country code" placeholder="+359..." />
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
               <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>

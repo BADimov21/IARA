@@ -50,6 +50,26 @@ public class PersonService : BaseService, IPersonService
 
     public int Add(PersonCreateRequestDTO dto)
     {
+        // Check for duplicate EGN
+        if (!string.IsNullOrEmpty(dto.EGN))
+        {
+            var existingPersonWithEGN = Db.Persons.FirstOrDefault(p => p.EGN == dto.EGN);
+            if (existingPersonWithEGN != null)
+            {
+                throw new InvalidOperationException($"A person with EGN '{dto.EGN}' already exists.");
+            }
+        }
+
+        // Check for duplicate phone number
+        if (!string.IsNullOrEmpty(dto.PhoneNumber))
+        {
+            var existingPersonWithPhone = Db.Persons.FirstOrDefault(p => p.PhoneNumber == dto.PhoneNumber);
+            if (existingPersonWithPhone != null)
+            {
+                throw new InvalidOperationException($"A person with phone number '{dto.PhoneNumber}' already exists.");
+            }
+        }
+
         var person = new Person
         {
             FirstName = dto.FirstName,

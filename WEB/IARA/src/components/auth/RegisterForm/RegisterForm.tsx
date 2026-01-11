@@ -57,14 +57,14 @@ export const RegisterForm: React.FC = () => {
       setPasswordReqs(checkPasswordRequirements(value));
     }
     
-    // Clear errors when user types and show inline validation
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
+    // Clear errors when user types
+    setErrors((prev) => ({ ...prev, [name]: '' }));
     
-    // Validate email format as user types
-    if (name === 'email' && value.trim() && !/\S+@\S+\.\S+/.test(value)) {
-      setErrors((prev) => ({ ...prev, email: 'Email must contain @' }));
+    // Validate email format as user types (only show error if invalid)
+    if (name === 'email' && value.trim()) {
+      if (!/\S+@\S+\.\S+/.test(value)) {
+        setErrors((prev) => ({ ...prev, email: 'Invalid email format' }));
+      }
     }
   };
 

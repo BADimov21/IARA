@@ -109,17 +109,17 @@ const rolePermissions: Record<UserRole, Record<Module, Permission[]>> = {
     fishingGearTypes: ['view'],
     ticketTypes: ['view'],
     
-    // Fishing - View and create for their own data
+    // Commercial Fishing - View only (regular users are recreational fishers)
     fishingTrips: ['view'],
-    fishingOperations: ['view', 'create'], // Can record their own operations
-    catches: ['view', 'create'], // Can record their own catches
+    fishingOperations: ['view'], // View only - commercial fishing operations
+    catches: ['view'], // View only - commercial catches
     fishingPermits: ['view'],
     fishingGear: ['view'],
     
-    // Batches - View only
-    landings: ['view'],
-    fishBatches: ['view'],
-    batchLocations: ['view'],
+    // Batches - Full access for commercial fishing operators
+    landings: ['view', 'create', 'edit', 'delete'],
+    fishBatches: ['view', 'create', 'edit', 'delete'],
+    batchLocations: ['view', 'create', 'edit', 'delete'],
     
     // Inspections - View only
     inspections: ['view'],

@@ -17,6 +17,10 @@ public class LandingCreateRequestDTO
     [MaxLength(100)]
     public string Port { get; set; } = null!;
 
+    [Required]
+    [Range(0.01, 99999999.99)]
+    public decimal TotalWeightKg { get; set; }
+
     public List<FishBatchCreateRequestDTO> FishBatches { get; set; } = new();
 }
 

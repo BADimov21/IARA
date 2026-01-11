@@ -9,6 +9,7 @@ public class LandingResponseDTO
     public int TripId { get; set; }
     public DateTime LandingDateTime { get; set; }
     public string Port { get; set; } = null!;
+    public decimal TotalWeightKg { get; set; }
     public List<FishBatchResponseDTO> FishBatches { get; set; } = new();
 }
 

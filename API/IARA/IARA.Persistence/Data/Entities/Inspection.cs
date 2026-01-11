@@ -28,6 +28,12 @@ public partial class Inspection
 
     public bool IsCompliant { get; set; }
 
+    [StringLength(200)]
+    public string? Location { get; set; }
+
+    [StringLength(1000)]
+    public string? Observations { get; set; }
+
     [ForeignKey("BatchId")]
     [InverseProperty("Inspections")]
     public virtual FishBatch? Batch { get; set; }

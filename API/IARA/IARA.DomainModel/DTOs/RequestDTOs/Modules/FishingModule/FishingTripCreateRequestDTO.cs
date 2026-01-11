@@ -19,6 +19,11 @@ public class FishingTripCreateRequestDTO
     [Required]
     [MaxLength(100)]
     public string DeparturePort { get; set; } = null!;
+
+    [MaxLength(100)]
+    public string? ArrivalPort { get; set; }
+
+    public DateTime? ReturnDateTime { get; set; }
 }
 
 

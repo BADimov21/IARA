@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { reportsApi } from '../../../api/reports.api';
 import type { VesselStatistics } from '../../../api/reports.api';
-import { useToast } from '../../shared/Toast';
+import { useToast, Card, Loading } from '../../shared';
 import './VesselStatisticsReport.css';
 
 export const VesselStatisticsReport: React.FC = () => {
   const [vessels, setVessels] = useState<VesselStatistics[]>([]);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState(2025);
-  const { showToast } = useToast();
+  const toast = useToast();
 
   useEffect(() => {
     loadData();
@@ -20,14 +20,14 @@ export const VesselStatisticsReport: React.FC = () => {
       const data = await reportsApi.getVesselStatistics(year);
       setVessels(data);
     } catch (error) {
-      showToast('error', 'Failed to load report');
+      toast.error('Failed to load vessel statistics');
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <div className="loading">Loading report...</div>;
+  if (loading) return <Loading />;
 
   return (
     <div className="vessel-statistics-report">
@@ -53,21 +53,19 @@ export const VesselStatisticsReport: React.FC = () => {
       ) : (
         <div className="report-content">
           <div className="stats-grid">
-            <div className="stat-card">
-              <h3>Total Vessels</h3>
-              <p className="stat-value">{vessels.length}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Total Trips</h3>
-              <p className="stat-value">{vessels.reduce((sum, v) => sum + v.totalTrips, 0)}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Total Catch</h3>
-              <p className="stat-value">{vessels.reduce((sum, v) => sum + v.totalCatchWeightKg, 0).toFixed(0)} kg</p>
-            </div>
+            <Card title="Total Vessels" subtitle="">
+              <p className="stat-value" style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#3b82f6', textAlign: 'center', margin: '1rem 0' }}>{vessels.length}</p>
+            </Card>
+            <Card title="Total Trips" subtitle="">
+              <p className="stat-value" style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#10b981', textAlign: 'center', margin: '1rem 0' }}>{vessels.reduce((sum, v) => sum + v.totalTrips, 0)}</p>
+            </Card>
+            <Card title="Total Catch" subtitle="">
+              <p className="stat-value" style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#f59e0b', textAlign: 'center', margin: '1rem 0' }}>{vessels.reduce((sum, v) => sum + v.totalCatchWeightKg, 0).toFixed(0)} kg</p>
+            </Card>
           </div>
 
-          <table className="report-table">
+          <Card title="Vessel Performance Rankings" subtitle={`Detailed statistics for ${year}`}>
+            <table className="report-table">
             <thead>
               <tr>
                 <th>Rank</th>
@@ -97,6 +95,7 @@ export const VesselStatisticsReport: React.FC = () => {
               ))}
             </tbody>
           </table>
+          </Card>
         </div>
       )}
     </div>

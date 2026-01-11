@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { batchLocationApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
+import { batchLocationApi, fishBatchApi } from '../../../shared/api';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel, Select } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
@@ -10,9 +10,13 @@ import type { FilterField } from '../../shared/FilterPanel/FilterPanel';
 
 interface BatchLocationItem {
   id: number;
-  name?: string;
-  address?: string;
-  type?: string;
+  batchId?: number;
+  locationType?: string;
+  locationName?: string;
+  arrivedAt?: string;
+  name?: string;  // Keep for backward compatibility
+  address?: string;  // Keep for backward compatibility
+  type?: string;  // Keep for backward compatibility
 }
 
 export const BatchLocationList: React.FC = () => {
@@ -25,10 +29,12 @@ export const BatchLocationList: React.FC = () => {
   const [editingItem, setEditingItem] = useState<BatchLocationItem | null>(null);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [batches, setBatches] = useState<any[]>([]);
   const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    type: '',
+    batchId: '',
+    locationType: '',
+    locationName: '',
+    arrivedAt: '',
   });
 
   const filterFields: FilterField[] = [
@@ -40,7 +46,18 @@ export const BatchLocationList: React.FC = () => {
 
   useEffect(() => {
     loadLocations();
+    loadBatches();
   }, []);
+
+  const loadBatches = async () => {
+    try {
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await fishBatchApi.getAll(filters);
+      setBatches(data);
+    } catch (error) {
+      console.error('Failed to load fish batches:', error);
+    }
+  };
 
   const loadLocations = async (customFilters?: BatchLocationFilter) => {
     try {
@@ -81,8 +98,12 @@ export const BatchLocationList: React.FC = () => {
 
   const handleAdd = () => {
     if (!canCreate(role, 'batchLocations')) return;
+    if (batches.length === 0) {
+      toast.error('Please create at least one fish batch before recording a batch location');
+      return;
+    }
     setEditingItem(null);
-    setFormData({ name: '', address: '', type: '' });
+    setFormData({ batchId: '', locationType: '', locationName: '', arrivedAt: '' });
     setIsModalOpen(true);
   };
 
@@ -90,9 +111,10 @@ export const BatchLocationList: React.FC = () => {
     if (!canEdit(role, 'batchLocations')) return;
     setEditingItem(item);
     setFormData({
-      name: item.name || '',
-      address: item.address || '',
-      type: item.type || '',
+      batchId: item.batchId?.toString() || '',
+      locationType: item.locationType || '',
+      locationName: item.locationName || '',
+      arrivedAt: item.arrivedAt || ''
     });
     setIsModalOpen(true);
   };
@@ -122,30 +144,57 @@ export const BatchLocationList: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEdit(role, 'batchLocations')) return;
+    
+    // Validation
+    if (!formData.batchId) {
+      toast.error('Please select a fish batch');
+      return;
+    }
+    if (!formData.locationType.trim()) {
+      toast.error('Please select a location type');
+      return;
+    }
+    if (!formData.locationName.trim()) {
+      toast.error('Please enter the location name');
+      return;
+    }
+    if (!formData.arrivedAt) {
+      toast.error('Please enter the arrival date and time');
+      return;
+    }
+    
     try {
-      // Note: API doesn't have edit method, only add
+      const payload = {
+        batchId: Number(formData.batchId),
+        locationType: formData.locationType,
+        locationName: formData.locationName,
+        arrivedAt: formData.arrivedAt ? new Date(formData.arrivedAt).toISOString() : '',
+      };
       if (editingItem) {
-        console.log('Edit not supported for batch locations');
-        toast.warning('Edit not supported for batch locations');
+        toast.info('Batch location movements cannot be edited once recorded.');
+        setIsModalOpen(false);
         return;
       } else {
-        // API requires different structure - skipping for now
-        console.log('Add requires batchId, locationType, arrivedAt');
-        toast.warning('Add functionality requires additional fields');
+        await batchLocationApi.add(payload);
+        toast.success('Batch location recorded successfully');
       }
       setIsModalOpen(false);
       await loadLocations();
     } catch (error) {
       console.error('Failed to save:', error);
-      toast.error('Failed to save batch location');
+      toast.error('Failed to record batch location');
     }
   };
 
   const columns: Column<BatchLocationItem>[] = [
     { key: 'id', header: 'ID', width: '80px' },
-    { key: 'name', header: 'Name' },
-    { key: 'type', header: 'Type' },
-    { key: 'address', header: 'Address' },
+    { key: 'batchId', header: 'Batch ID', render: (item) => item.batchId || '-' },
+    { key: 'locationName', header: 'Location', render: (item) => item.locationName || item.name || '-' },
+    { key: 'locationType', header: 'Type', render: (item) => item.locationType || item.type || '-' },
+    { key: 'arrivedAt', header: 'Arrived At', render: (item) => {
+      const date = item.arrivedAt;
+      return date ? new Date(date).toLocaleString() : '-';
+    }},
     {
       key: 'actions',
       header: 'Actions',
@@ -186,11 +235,68 @@ export const BatchLocationList: React.FC = () => {
       </Card>
 
       {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Location' : 'Add Location'} size="large">
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'View Location' : 'Record Batch Movement'} size="large">
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <Input label="Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required fullWidth />
-            <Input label="Type" value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} required fullWidth placeholder="e.g., Storage, Processing, Distribution" />
-            <Input label="Address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} required fullWidth />
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#4338ca' }}>
+              <strong>📦 Tracking Batch Movement</strong>
+              <p style={{ margin: '0.5rem 0 0 0' }}>Record when a fish batch arrives at a storage, processing, or distribution location for traceability throughout the supply chain.</p>
+            </div>
+
+            <Select
+              label="Fish Batch"
+              value={formData.batchId}
+              onChange={(e) => setFormData({ ...formData, batchId: e.target.value })}
+              required
+              fullWidth
+              helperText="Select the batch being moved"
+              options={[
+                { value: '', label: '-- Select Fish Batch --' },
+                ...batches.map((batch: any) => ({
+                  value: batch.id.toString(),
+                  label: `${batch.batchCode || batch.batchNumber || `Batch #${batch.id}`} - ${batch.species?.name || batch.fishSpecyName || 'Unknown Species'}`
+                }))
+              ]}
+            />
+
+            <Select
+              label="Location Type"
+              value={formData.locationType}
+              onChange={(e) => setFormData({ ...formData, locationType: e.target.value })}
+              required
+              fullWidth
+              helperText="Type of location the batch is moving to"
+              options={[
+                { value: '', label: '-- Select Location Type --' },
+                { value: 'Storage', label: 'Storage Facility' },
+                { value: 'Processing', label: 'Processing Plant' },
+                { value: 'Distribution', label: 'Distribution Center' },
+                { value: 'Retail', label: 'Retail Market' },
+                { value: 'Export', label: 'Export Terminal' },
+                { value: 'Other', label: 'Other Location' },
+              ]}
+            />
+
+            <Input 
+              label="Location Name" 
+              value={formData.locationName} 
+              onChange={(e) => setFormData({ ...formData, locationName: e.target.value })} 
+              required 
+              fullWidth 
+              placeholder="e.g., Cold Storage Warehouse A"
+              helperText="Name or identifier of the location"
+              maxLength={200}
+            />
+
+            <Input 
+              label="Arrival Date & Time" 
+              type="datetime-local" 
+              value={formData.arrivedAt} 
+              onChange={(e) => setFormData({ ...formData, arrivedAt: e.target.value })} 
+              required 
+              fullWidth 
+              helperText="When the batch arrived at this location"
+              max={new Date().toISOString().slice(0, 16)}
+            />
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
               <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>

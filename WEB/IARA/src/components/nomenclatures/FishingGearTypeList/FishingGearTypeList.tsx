@@ -16,14 +16,13 @@ export const FishingGearTypeList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FishingGearTypeResponseDTO | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', code: '' });
+  const [formData, setFormData] = useState({ typeName: '' });
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
 
   const filterFields: FilterField[] = [
     { name: 'id', label: 'ID', type: 'number', placeholder: 'Search by ID' },
-    { name: 'name', label: 'Name', type: 'text', placeholder: 'Search name' },
-    { name: 'code', label: 'Code', type: 'text', placeholder: 'Search code' },
+    { name: 'typeName', label: 'Name', type: 'text', placeholder: 'Search name' },
   ];
 
   useEffect(() => {
@@ -70,14 +69,14 @@ export const FishingGearTypeList: React.FC = () => {
   const handleAdd = () => {
     if (!canCreate(role, 'fishingGearTypes')) return;
     setEditingItem(null);
-    setFormData({ name: '', description: '', code: '' });
+    setFormData({ typeName: '' });
     setIsModalOpen(true);
   };
 
   const handleEdit = (item: FishingGearTypeResponseDTO) => {
     if (!canEdit(role, 'fishingGearTypes')) return;
     setEditingItem(item);
-    setFormData({ name: item.name || '', description: item.description || '', code: item.code || '' });
+    setFormData({ typeName: item.typeName || item.name || '' });
     setIsModalOpen(true);
   };
 
@@ -124,9 +123,11 @@ export const FishingGearTypeList: React.FC = () => {
 
   const columns: Column<FishingGearTypeResponseDTO>[] = [
     { key: 'id', header: 'ID', width: '80px' },
-    { key: 'code', header: 'Code', width: '100px' },
-    { key: 'name', header: 'Name' },
-    { key: 'description', header: 'Description' },
+    { 
+      key: 'typeName', 
+      header: 'Gear Type Name',
+      render: (item) => item.typeName || item.name || '-'
+    },
     {
       key: 'actions',
       header: 'Actions',
@@ -175,9 +176,15 @@ export const FishingGearTypeList: React.FC = () => {
       {isModalOpen && (
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Gear Type' : 'Add Gear Type'}>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <Input label="Code" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required fullWidth />
-            <Input label="Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required fullWidth />
-            <Input label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} fullWidth multiline />
+            <Input 
+              label="Gear Type Name" 
+              value={formData.typeName} 
+              onChange={(e) => setFormData({ ...formData, typeName: e.target.value })} 
+              required 
+              fullWidth 
+              placeholder="e.g., Gillnet, Trawl, Longline"
+              helperText="Enter the name of the fishing gear type"
+            />
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
               <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>

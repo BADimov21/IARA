@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { vesselApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel, Select } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
@@ -18,6 +18,8 @@ export const VesselList: React.FC = () => {
   const [editingItem, setEditingItem] = useState<VesselResponseDTO | null>(null);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [persons, setPersons] = useState<any[]>([]);
+  const [engineTypes, setEngineTypes] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     vesselName: '',
     internationalNumber: '',
@@ -43,7 +45,31 @@ export const VesselList: React.FC = () => {
 
   useEffect(() => {
     loadVessels();
+    loadPersons();
+    loadEngineTypes();
   }, []);
+
+  const loadPersons = async () => {
+    try {
+      const { personApi } = await import('../../../shared/api');
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await personApi.getAll(filters);
+      setPersons(data);
+    } catch (error) {
+      console.error('Failed to load persons:', error);
+    }
+  };
+
+  const loadEngineTypes = async () => {
+    try {
+      const { engineTypeApi } = await import('../../../shared/api');
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await engineTypeApi.getAll(filters);
+      setEngineTypes(data);
+    } catch (error) {
+      console.error('Failed to load engine types:', error);
+    }
+  };
 
   const loadVessels = async (customFilters?: VesselFilter) => {
     try {
@@ -84,6 +110,10 @@ export const VesselList: React.FC = () => {
 
   const handleAdd = () => {
     if (!canCreate(role, 'vessels')) return;
+    if (persons.length === 0) {
+      toast.error('Please create at least one person before registering a vessel');
+      return;
+    }
     setEditingItem(null);
     setFormData({ vesselName: '', internationalNumber: '', callSign: '', length: '', width: '', draft: '', grossTonnage: '', enginePower: '', engineTypeId: '', ownerId: '', captainId: '' });
     setIsModalOpen(true);
@@ -213,23 +243,71 @@ export const VesselList: React.FC = () => {
       {isModalOpen && (
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Vessel' : 'Add Vessel'} size="large">
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <Input label="Vessel Name" value={formData.vesselName} onChange={(e) => setFormData({ ...formData, vesselName: e.target.value })} required fullWidth />
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#1e40af' }}>
+              <strong>⛵ Fishing Vessel Registration</strong>
+              <p style={{ margin: '0.5rem 0 0 0' }}>Register commercial fishing vessels in the system. Include vessel specifications, international identification, and ownership information.</p>
+            </div>
+            <Input label="Vessel Name" value={formData.vesselName} onChange={(e) => setFormData({ ...formData, vesselName: e.target.value })} required fullWidth helperText="Official name of the fishing vessel" />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Input label="International Number" value={formData.internationalNumber} onChange={(e) => setFormData({ ...formData, internationalNumber: e.target.value })} required fullWidth />
-              <Input label="Call Sign" value={formData.callSign} onChange={(e) => setFormData({ ...formData, callSign: e.target.value })} required fullWidth />
+              <Input label="International Number (CFR)" value={formData.internationalNumber} onChange={(e) => setFormData({ ...formData, internationalNumber: e.target.value })} required fullWidth helperText="Community Fishing Fleet Register number" />
+              <Input label="Call Sign" value={formData.callSign} onChange={(e) => setFormData({ ...formData, callSign: e.target.value })} required fullWidth helperText="Radio call sign identifier" />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-              <Input label="Length (m)" type="number" step="0.01" value={formData.length} onChange={(e) => setFormData({ ...formData, length: e.target.value })} fullWidth />
-              <Input label="Width (m)" type="number" step="0.01" value={formData.width} onChange={(e) => setFormData({ ...formData, width: e.target.value })} fullWidth />
-              <Input label="Draft (m)" type="number" step="0.01" value={formData.draft} onChange={(e) => setFormData({ ...formData, draft: e.target.value })} fullWidth />
+              <Input label="Length (m)" type="number" step="0.01" value={formData.length} onChange={(e) => setFormData({ ...formData, length: e.target.value })} fullWidth helperText="Overall length in meters" />
+              <Input label="Width (m)" type="number" step="0.01" value={formData.width} onChange={(e) => setFormData({ ...formData, width: e.target.value })} fullWidth helperText="Maximum beam width" />
+              <Input label="Draft (m)" type="number" step="0.01" value={formData.draft} onChange={(e) => setFormData({ ...formData, draft: e.target.value })} fullWidth helperText="Hull depth below waterline" />
             </div>
-            <Input label="Gross Tonnage" type="number" step="0.01" value={formData.grossTonnage} onChange={(e) => setFormData({ ...formData, grossTonnage: e.target.value })} fullWidth />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-              <Input label="Engine Power (kW)" type="number" step="0.01" value={formData.enginePower} onChange={(e) => setFormData({ ...formData, enginePower: e.target.value })} fullWidth />
-              <Input label="Engine Type ID" type="number" value={formData.engineTypeId} onChange={(e) => setFormData({ ...formData, engineTypeId: e.target.value })} placeholder="1" fullWidth />
-              <Input label="Owner ID" type="number" value={formData.ownerId} onChange={(e) => setFormData({ ...formData, ownerId: e.target.value })} placeholder="1" fullWidth />
+            <Input label="Gross Tonnage" type="number" step="0.01" value={formData.grossTonnage} onChange={(e) => setFormData({ ...formData, grossTonnage: e.target.value })} fullWidth helperText="Vessel's total internal volume" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <Input label="Engine Power (kW)" type="number" step="0.01" value={formData.enginePower} onChange={(e) => setFormData({ ...formData, enginePower: e.target.value })} fullWidth helperText="Main engine power in kilowatts" />
+              <Select
+                label="Engine Type"
+                value={formData.engineTypeId}
+                onChange={(e) => setFormData({ ...formData, engineTypeId: e.target.value })}
+                required
+                fullWidth
+                helperText="Select the vessel's engine type"
+                options={[
+                  { value: '', label: '-- Select Engine Type --' },
+                  ...engineTypes.map((type: any) => ({
+                    value: type.id.toString(),
+                    label: type.name || type.engineTypeName || `Engine Type ${type.id}`
+                  }))
+                ]}
+              />
             </div>
-            <Input label="Captain ID" type="number" value={formData.captainId} onChange={(e) => setFormData({ ...formData, captainId: e.target.value })} placeholder="1" fullWidth />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <Select
+                label="Owner"
+                value={formData.ownerId}
+                onChange={(e) => setFormData({ ...formData, ownerId: e.target.value })}
+                required
+                fullWidth
+                helperText="Legal owner of the vessel"
+                options={[
+                  { value: '', label: '-- Select Owner --' },
+                  ...persons.map((person: any) => ({
+                    value: person.id.toString(),
+                    label: `${person.firstName} ${person.lastName}${person.egn ? ` (${person.egn})` : ''}`
+                  }))
+                ]}
+              />
+              <Select
+                label="Captain"
+                value={formData.captainId}
+                onChange={(e) => setFormData({ ...formData, captainId: e.target.value })}
+                required
+                fullWidth
+                helperText="Licensed captain of the vessel"
+                options={[
+                  { value: '', label: '-- Select Captain --' },
+                  ...persons.map((person: any) => ({
+                    value: person.id.toString(),
+                    label: `${person.firstName} ${person.lastName}${person.egn ? ` (${person.egn})` : ''}`
+                  }))
+                ]}
+              />
+            </div>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
               <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>

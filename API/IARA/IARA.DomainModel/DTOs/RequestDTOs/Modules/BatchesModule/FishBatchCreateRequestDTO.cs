@@ -20,6 +20,9 @@ public class FishBatchCreateRequestDTO
     [Required]
     [Range(0.01, 99999999.99)]
     public decimal WeightKg { get; set; }
+
+    [Range(1, int.MaxValue)]
+    public int? Quantity { get; set; }
 }
 
 

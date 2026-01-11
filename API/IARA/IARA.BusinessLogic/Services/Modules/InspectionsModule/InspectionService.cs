@@ -54,7 +54,9 @@ public class InspectionService : BaseService, IInspectionService
             InspectionType = dto.InspectionType,
             BatchId = dto.BatchId,
             TicketPurchaseId = dto.TicketPurchaseId,
-            IsCompliant = dto.IsCompliant
+            IsCompliant = dto.IsCompliant,
+            Location = dto.Location,
+            Observations = dto.Observations
         };
 
         Db.Inspections.Add(inspection);
@@ -70,6 +72,8 @@ public class InspectionService : BaseService, IInspectionService
         inspection.InspectorId = dto.InspectorId;
         inspection.VesselId = dto.VesselId;
         inspection.InspectionDateTime = dto.InspectionDateTime;
+        inspection.Location = dto.Location;
+        inspection.Observations = dto.Observations;
 
         return Db.SaveChanges() > 0;
     }
@@ -105,6 +109,8 @@ public class InspectionService : BaseService, IInspectionService
                     BatchId = inspection.BatchId,
                     TicketPurchaseId = inspection.TicketPurchaseId,
                     IsCompliant = inspection.IsCompliant,
+                    Location = inspection.Location,
+                    Observations = inspection.Observations,
                     InspectorId = inspection.InspectorId,
                     Inspector = new InspectorSimpleResponseDTO
                     {

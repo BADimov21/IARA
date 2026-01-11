@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { catchApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
+import { catchApi, fishSpecyApi, fishingOperationApi } from '../../../shared/api';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel, Select } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
@@ -26,8 +26,10 @@ export const CatchList: React.FC = () => {
   const [editingItem, setEditingItem] = useState<CatchItem | null>(null);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [fishSpecies, setFishSpecies] = useState<any[]>([]);
+  const [operations, setOperations] = useState<any[]>([]);
   const [formData, setFormData] = useState({
-    fishingTripId: '',
+    operationId: '',
     fishSpecyId: '',
     quantity: '',
     weight: '',
@@ -45,7 +47,29 @@ export const CatchList: React.FC = () => {
 
   useEffect(() => {
     loadCatches();
+    loadFishSpecies();
+    loadOperations();
   }, []);
+
+  const loadFishSpecies = async () => {
+    try {
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await fishSpecyApi.getAll(filters);
+      setFishSpecies(data);
+    } catch (error) {
+      console.error('Failed to load fish species:', error);
+    }
+  };
+
+  const loadOperations = async () => {
+    try {
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await fishingOperationApi.getAll(filters);
+      setOperations(data);
+    } catch (error) {
+      console.error('Failed to load fishing operations:', error);
+    }
+  };
 
   const loadCatches = async (customFilters?: CatchFilter) => {
     try {
@@ -83,7 +107,7 @@ export const CatchList: React.FC = () => {
   const handleAdd = () => {
     if (!canCreate(role, 'catches')) return;
     setEditingItem(null);
-    setFormData({ fishingTripId: '', fishSpecyId: '', quantity: '', weight: '' });
+    setFormData({ operationId: '', fishSpecyId: '', quantity: '', weight: '' });
     setIsModalOpen(true);
   };
 
@@ -91,7 +115,7 @@ export const CatchList: React.FC = () => {
     if (!canEdit(role, 'catches')) return;
     setEditingItem(item);
     setFormData({
-      fishingTripId: item.fishingTripId?.toString() || '',
+      operationId: item.fishingTripId?.toString() || '',
       fishSpecyId: item.fishSpecyId?.toString() || '',
       quantity: item.quantity?.toString() || '',
       weight: item.weight?.toString() || '',
@@ -124,34 +148,67 @@ export const CatchList: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEdit(role, 'catches')) return;
+    
+    // Validation
+    if (!formData.operationId) {
+      toast.error('Please select a fishing operation');
+      return;
+    }
+    if (!formData.fishSpecyId) {
+      toast.error('Please select a fish species');
+      return;
+    }
+    if (!formData.quantity || parseInt(formData.quantity) <= 0) {
+      toast.error('Please enter a valid quantity');
+      return;
+    }
+    if (!formData.weight || parseFloat(formData.weight) <= 0) {
+      toast.error('Please enter a valid weight');
+      return;
+    }
+    
     try {
       const payload = {
-        operationId: 1,
+        operationId: Number(formData.operationId),
         speciesId: Number(formData.fishSpecyId),
-        weightKg: formData.weight ? parseFloat(formData.weight) : 0,
-        quantity: formData.quantity ? parseInt(formData.quantity) : 0,
+        weightKg: parseFloat(formData.weight),
+        quantity: parseInt(formData.quantity),
       };
       if (editingItem) {
-        // TODO: API might not support edit for catches
-        console.log('Edit catch:', { id: editingItem.id, ...payload });
-        toast.warning('Edit not supported for catches');
+        await catchApi.edit({ id: editingItem.id, ...payload });
+        toast.success('Catch updated successfully');
       } else {
         await catchApi.add(payload);
-        toast.success('Catch added successfully');
+        toast.success('Catch recorded successfully');
       }
       setIsModalOpen(false);
       await loadCatches();
     } catch (error) {
       console.error('Failed to save:', error);
-      toast.error('Failed to save catch');
+      toast.error(editingItem ? 'Failed to update catch' : 'Failed to record catch');
     }
   };
 
   const columns: Column<CatchItem>[] = [
     { key: 'id', header: 'ID', width: '80px' },
-    { key: 'fishSpecyName', header: 'Fish Species' },
-    { key: 'quantity', header: 'Quantity' },
-    { key: 'weight', header: 'Weight (kg)', render: (item) => item.weight ? `${item.weight} kg` : '-' },
+    { 
+      key: 'fishSpecyName', 
+      header: 'Fish Species',
+      render: (item: any) => item.species?.name || item.speciesName || item.fishSpecyName || '-'
+    },
+    { 
+      key: 'quantity', 
+      header: 'Quantity',
+      render: (item: any) => item.quantity || '-'
+    },
+    { 
+      key: 'weight', 
+      header: 'Weight (kg)', 
+      render: (item: any) => {
+        const weight = item.weightKg ?? item.weight;
+        return weight ? `${weight} kg` : '-';
+      }
+    },
     {
       key: 'actions',
       header: 'Actions',
@@ -169,9 +226,13 @@ export const CatchList: React.FC = () => {
 
   return (
     <div>
-      {!canEdit(role, 'catches') && (
+      {!canCreate(role, 'catches') && (
         <div className="role-notice" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '0.5rem', color: '#0369a1' }}>
-          You have view-only access to this page.
+          <strong>ℹ️ Commercial Catches</strong>
+          <p style={{ margin: '0.5rem 0 0 0' }}>
+            This page is for commercial fishing catches linked to vessel trips. If you're a recreational fisher, 
+            please use the <a href="/recreational/catches" style={{ color: '#0284c7', textDecoration: 'underline' }}>Recreational Catches</a> page to record your catches with your fishing ticket.
+          </p>
         </div>
       )}
       <FilterPanel
@@ -192,19 +253,73 @@ export const CatchList: React.FC = () => {
       </Card>
 
       {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Catch' : 'Add Catch'} size="large">
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Catch' : 'Record Catch'} size="large">
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Input label="Fishing Trip ID" value={formData.fishingTripId} onChange={(e) => setFormData({ ...formData, fishingTripId: e.target.value })} required fullWidth />
-              <Input label="Fish Species ID" value={formData.fishSpecyId} onChange={(e) => setFormData({ ...formData, fishSpecyId: e.target.value })} required fullWidth />
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#4338ca' }}>
+              <strong>📝 Recording a Catch</strong>
+              <p style={{ margin: '0.5rem 0 0 0' }}>Select the fishing operation where this catch was made, then specify the species and amount caught.</p>
             </div>
+
+            <Select
+              label="Fishing Operation"
+              value={formData.operationId}
+              onChange={(e) => setFormData({ ...formData, operationId: e.target.value })}
+              required
+              fullWidth
+              helperText="Select the operation during which this catch was made"
+              options={[
+                { value: '', label: '-- Select Fishing Operation --' },
+                ...operations.map((op: any) => ({
+                  value: op.id.toString(),
+                  label: `Operation #${op.id} - ${op.startDateTime ? new Date(op.startDateTime).toLocaleDateString() : 'N/A'} ${op.fishingGear?.name ? `(${op.fishingGear.name})` : ''}`
+                }))
+              ]}
+            />
+
+            <Select
+              label="Fish Species"
+              value={formData.fishSpecyId}
+              onChange={(e) => setFormData({ ...formData, fishSpecyId: e.target.value })}
+              required
+              fullWidth
+              helperText="Select the species of fish caught"
+              options={[
+                { value: '', label: '-- Select Fish Species --' },
+                ...fishSpecies.map((species: any) => ({
+                  value: species.id.toString(),
+                  label: species.name || species.speciesName || 'Unknown'
+                }))
+              ]}
+            />
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Input label="Quantity" type="number" value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} required fullWidth />
-              <Input label="Weight (kg)" type="number" step="0.01" value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} required fullWidth />
+              <Input 
+                label="Quantity" 
+                type="number" 
+                value={formData.quantity} 
+                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} 
+                required 
+                fullWidth 
+                min="1"
+                placeholder="Number of fish"
+                helperText="Total number of fish caught"
+              />
+              <Input 
+                label="Weight (kg)" 
+                type="number" 
+                step="0.01" 
+                value={formData.weight} 
+                onChange={(e) => setFormData({ ...formData, weight: e.target.value })} 
+                required 
+                fullWidth 
+                min="0.01"
+                placeholder="0.00"
+                helperText="Total weight in kilograms"
+              />
             </div>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>
+              <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Record Catch'}</Button>
             </div>
           </form>
         </Modal>

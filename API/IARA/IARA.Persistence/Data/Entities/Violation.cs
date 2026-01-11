@@ -14,6 +14,9 @@ public partial class Violation
 
     public int InspectionId { get; set; }
 
+    [StringLength(100)]
+    public string? ViolationType { get; set; }
+
     [StringLength(500)]
     public string Description { get; set; } = null!;
 

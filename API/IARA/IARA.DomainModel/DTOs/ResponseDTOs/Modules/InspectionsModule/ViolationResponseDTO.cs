@@ -7,6 +7,7 @@ public class ViolationResponseDTO
 {
     public int Id { get; set; }
     public int InspectionId { get; set; }
+    public string? ViolationType { get; set; }
     public string Description { get; set; } = null!;
     public decimal FineAmount { get; set; }
     public bool IsPaid { get; set; }

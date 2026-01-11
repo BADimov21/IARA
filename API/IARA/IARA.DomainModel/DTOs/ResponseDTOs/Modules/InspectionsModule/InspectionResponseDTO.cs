@@ -21,6 +21,8 @@ public class InspectionResponseDTO
     public int? TicketPurchaseId { get; set; }
     public TicketPurchaseSimpleResponseDTO? TicketPurchase { get; set; }
     public bool IsCompliant { get; set; }
+    public string? Location { get; set; }
+    public string? Observations { get; set; }
     public List<ViolationResponseDTO> Violations { get; set; } = new();
 }
 

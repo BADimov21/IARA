@@ -26,6 +26,12 @@ public class InspectionCreateRequestDTO
     [Required]
     public bool IsCompliant { get; set; }
 
+    [MaxLength(200)]
+    public string? Location { get; set; }
+
+    [MaxLength(1000)]
+    public string? Observations { get; set; }
+
     public List<ViolationCreateRequestDTO> Violations { get; set; } = new();
 }
 

@@ -48,7 +48,9 @@ public class UserService : BaseService, IUserService
         var user = _userManager.Users.FirstOrDefault(u => u.Id == id);
         if (user != null)
         {
-            var result = _userManager.DeleteAsync(user).Result;
+            // Ban user by setting IsActive to false instead of deleting
+            user.IsActive = false;
+            var result = _userManager.UpdateAsync(user).Result;
             return result.Succeeded;
         }
         return false;
@@ -56,7 +58,7 @@ public class UserService : BaseService, IUserService
 
     private IQueryable<User> GetAllFromDatabase()
     {
-        return _userManager.Users;
+        return _userManager.Users.Where(u => u.IsActive == true);
     }
 
     private IQueryable<User> ApplyPagination(IQueryable<User> query, int page, int pageSize)

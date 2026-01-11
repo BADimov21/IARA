@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { telkDecisionApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
+import { telkDecisionApi, personApi } from '../../../shared/api';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel, Select } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
@@ -10,10 +10,11 @@ import type { FilterField } from '../../shared/FilterPanel/FilterPanel';
 
 interface TELKDecisionItem {
   id: number;
+  personId?: number;
   decisionNumber?: string;
   decisionDate?: string;
-  subject?: string;
-  description?: string;
+  issueDate?: string;
+  validUntil?: string;
 }
 
 export const TELKDecisionList: React.FC = () => {
@@ -26,11 +27,12 @@ export const TELKDecisionList: React.FC = () => {
   const [editingItem, setEditingItem] = useState<TELKDecisionItem | null>(null);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [persons, setPersons] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     decisionNumber: '',
     decisionDate: '',
-    subject: '',
-    description: '',
+    validUntil: '',
+    personId: '',
   });
 
   const filterFields: FilterField[] = [
@@ -43,7 +45,18 @@ export const TELKDecisionList: React.FC = () => {
 
   useEffect(() => {
     loadDecisions();
+    loadPersons();
   }, []);
+
+  const loadPersons = async () => {
+    try {
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await personApi.getAll(filters);
+      setPersons(data);
+    } catch (error) {
+      console.error('Failed to load persons:', error);
+    }
+  };
 
   const loadDecisions = async (customFilters?: TELKDecisionFilter) => {
     try {
@@ -84,8 +97,12 @@ export const TELKDecisionList: React.FC = () => {
 
   const handleAdd = () => {
     if (!canCreate(role, 'telkDecisions')) return;
+    if (persons.length === 0) {
+      toast.error('Please create at least one person before adding a TELK decision');
+      return;
+    }
     setEditingItem(null);
-    setFormData({ decisionNumber: '', decisionDate: '', subject: '', description: '' });
+    setFormData({ decisionNumber: '', decisionDate: '', validUntil: '', personId: '' });
     setIsModalOpen(true);
   };
 
@@ -95,8 +112,8 @@ export const TELKDecisionList: React.FC = () => {
     setFormData({
       decisionNumber: item.decisionNumber || '',
       decisionDate: item.decisionDate ? item.decisionDate.split('T')[0] : '',
-      subject: item.subject || '',
-      description: item.description || '',
+      validUntil: '',
+      personId: '',
     });
     setIsModalOpen(true);
   };
@@ -128,11 +145,10 @@ export const TELKDecisionList: React.FC = () => {
     if (!canEdit(role, 'telkDecisions')) return;
     try {
       const payload = {
+        personId: formData.personId ? parseInt(formData.personId) : 1,
         decisionNumber: formData.decisionNumber,
-        subject: formData.subject,
-        description: formData.description,
-        personId: 1,
-        issueDate: formData.decisionDate ? new Date(formData.decisionDate).toISOString() : '',
+        issueDate: formData.decisionDate,
+        validUntil: formData.validUntil || undefined,
       };
       if (editingItem) {
         await telkDecisionApi.edit({ id: editingItem.id, ...payload });
@@ -152,8 +168,11 @@ export const TELKDecisionList: React.FC = () => {
   const columns: Column<TELKDecisionItem>[] = [
     { key: 'id', header: 'ID', width: '80px' },
     { key: 'decisionNumber', header: 'Decision Number' },
-    { key: 'decisionDate', header: 'Date', render: (item) => item.decisionDate ? new Date(item.decisionDate).toLocaleDateString() : '-' },
-    { key: 'subject', header: 'Subject' },
+    { key: 'issueDate', header: 'Issue Date', render: (item) => {
+      const date = item.issueDate || item.decisionDate;
+      return date ? new Date(date).toLocaleDateString() : '-';
+    }},
+    { key: 'validUntil', header: 'Valid Until', render: (item) => item.validUntil ? new Date(item.validUntil).toLocaleDateString() : 'Permanent' },
     {
       key: 'actions',
       header: 'Actions',
@@ -196,12 +215,30 @@ export const TELKDecisionList: React.FC = () => {
       {isModalOpen && (
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Decision' : 'Add Decision'} size="large">
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Input label="Decision Number" value={formData.decisionNumber} onChange={(e) => setFormData({ ...formData, decisionNumber: e.target.value })} required fullWidth />
-              <Input label="Decision Date" type="date" value={formData.decisionDate} onChange={(e) => setFormData({ ...formData, decisionDate: e.target.value })} required fullWidth />
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#1e40af' }}>
+              <strong>📜 TELK Committee Decisions</strong>
+              <p style={{ margin: '0.5rem 0 0 0' }}>Record official decisions from the Territorial Expert Commission for Fisheries and Aquaculture (TELK). These decisions authorize fishing permits and licensing.</p>
             </div>
-            <Input label="Subject" value={formData.subject} onChange={(e) => setFormData({ ...formData, subject: e.target.value })} required fullWidth />
-            <Input label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} required fullWidth />
+            <Select
+              label="Applicant/Subject Person"
+              value={formData.personId}
+              onChange={(e) => setFormData({ ...formData, personId: e.target.value })}
+              required
+              fullWidth
+              helperText="Person this decision applies to"
+              options={[
+                { value: '', label: '-- Select Person --' },
+                ...persons.map((person: any) => ({
+                  value: person.id.toString(),
+                  label: `${person.firstName} ${person.lastName}${person.egn ? ` (${person.egn})` : ''}`
+                }))
+              ]}
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <Input label="Decision Number" value={formData.decisionNumber} onChange={(e) => setFormData({ ...formData, decisionNumber: e.target.value })} required fullWidth helperText="Official decision reference number" />
+              <Input label="Issue Date" type="date" value={formData.decisionDate} onChange={(e) => setFormData({ ...formData, decisionDate: e.target.value })} required fullWidth helperText="Date the decision was issued" />
+            </div>
+            <Input label="Valid Until (Optional)" type="date" value={formData.validUntil} onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })} fullWidth helperText="Expiration date of the decision (leave empty if permanent)" />
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
               <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>

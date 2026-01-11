@@ -36,7 +36,9 @@ public class FishingTripService : BaseService, IFishingTripService
             VesselId = dto.VesselId,
             PermitId = dto.PermitId,
             DepartureDateTime = dto.DepartureDateTime,
-            DeparturePort = dto.DeparturePort
+            DeparturePort = dto.DeparturePort,
+            ArrivalDateTime = dto.ReturnDateTime,
+            ArrivalPort = dto.ArrivalPort
         };
 
         Db.FishingTrips.Add(trip);

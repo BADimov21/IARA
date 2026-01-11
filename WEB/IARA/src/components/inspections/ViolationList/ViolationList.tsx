@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { violationApi } from '../../../shared/api';
-import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel } from '../../shared';
+import { violationApi, inspectionApi } from '../../../shared/api';
+import { Button, Table, Modal, Input, Loading, Card, ConfirmDialog, useToast, FilterPanel, Select } from '../../shared';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { canCreate, canEdit, canDelete } from '../../../shared/utils/permissions';
 import { useConfirm } from '../../../shared/hooks/useConfirm';
@@ -11,7 +11,9 @@ import type { ViolationFilter, BaseFilter } from '../../../shared/types';
 interface ViolationItem {
   id: number;
   inspectionId?: number;
+  inspection?: { id: number; location?: string; inspectionDate?: string; inspectionDateTime?: string };
   violationType?: string;
+  type?: string;
   description?: string;
   fineAmount?: number;
   isPaid?: boolean;
@@ -28,6 +30,7 @@ export const ViolationList: React.FC = () => {
   const [editingItem, setEditingItem] = useState<ViolationItem | null>(null);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [inspections, setInspections] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     inspectionId: '',
     violationType: '',
@@ -45,7 +48,18 @@ export const ViolationList: React.FC = () => {
 
   useEffect(() => {
     loadViolations();
+    loadInspections();
   }, []);
+
+  const loadInspections = async () => {
+    try {
+      const filters = { page: 1, pageSize: 100, filters: {} };
+      const data = await inspectionApi.getAll(filters);
+      setInspections(data);
+    } catch (error) {
+      console.error('Failed to load inspections:', error);
+    }
+  };
 
   const loadViolations = async (customFilters?: ViolationFilter) => {
     try {
@@ -86,6 +100,10 @@ export const ViolationList: React.FC = () => {
 
   const handleAdd = () => {
     if (!canCreate(role, 'violations')) return;
+    if (inspections.length === 0) {
+      toast.error('Please create at least one inspection before recording a violation');
+      return;
+    }
     setEditingItem(null);
     setFormData({ inspectionId: '', violationType: '', description: '', fineAmount: '' });
     setIsModalOpen(true);
@@ -150,6 +168,25 @@ export const ViolationList: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEdit(role, 'violations')) return;
+    
+    // Validation
+    if (!formData.inspectionId) {
+      toast.error('Please select an inspection');
+      return;
+    }
+    if (!formData.violationType.trim()) {
+      toast.error('Please select a violation type');
+      return;
+    }
+    if (!formData.description.trim()) {
+      toast.error('Please enter a description of the violation');
+      return;
+    }
+    if (formData.fineAmount && parseFloat(formData.fineAmount) < 0) {
+      toast.error('Fine amount cannot be negative');
+      return;
+    }
+    
     try {
       const payload = {
         inspectionId: Number(formData.inspectionId),
@@ -162,21 +199,29 @@ export const ViolationList: React.FC = () => {
         toast.success('Violation updated successfully');
       } else {
         await violationApi.add(payload);
-        toast.success('Violation added successfully');
+        toast.success('Violation recorded successfully');
       }
       setIsModalOpen(false);
       await loadViolations();
     } catch (error) {
       console.error('Failed to save:', error);
-      toast.error('Failed to save violation');
+      toast.error(editingItem ? 'Failed to update violation' : 'Failed to record violation');
     }
   };
 
   const columns: Column<ViolationItem>[] = [
     { key: 'id', header: 'ID', width: '80px' },
-    { key: 'violationType', header: 'Type' },
+    { key: 'inspection', header: 'Inspection', render: (item) => {
+      if (item.inspection) {
+        const date = item.inspection.inspectionDateTime || item.inspection.inspectionDate;
+        const dateStr = date ? new Date(date).toLocaleDateString() : 'N/A';
+        return `Inspection #${item.inspection.id} - ${dateStr}`;
+      }
+      return item.inspectionId ? `Inspection #${item.inspectionId}` : '-';
+    }},
+    { key: 'violationType', header: 'Type', render: (item) => item.violationType || '-' },
     { key: 'description', header: 'Description' },
-    { key: 'fineAmount', header: 'Fine Amount', render: (item) => item.fineAmount ? `${item.fineAmount} BGN` : '-' },
+    { key: 'fineAmount', header: 'Fine Amount', render: (item) => item.fineAmount ? `€${item.fineAmount.toFixed(2)}` : '-' },
     {
       key: 'isPaid',
       header: 'Payment Status',
@@ -243,15 +288,81 @@ export const ViolationList: React.FC = () => {
       </Card>
 
       {isModalOpen && (
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Violation' : 'Add Violation'} size="large">
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? 'Edit Violation' : 'Record Violation'} size="large">
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <Input label="Inspection ID" value={formData.inspectionId} onChange={(e) => setFormData({ ...formData, inspectionId: e.target.value })} required fullWidth />
-            <Input label="Violation Type" value={formData.violationType} onChange={(e) => setFormData({ ...formData, violationType: e.target.value })} required fullWidth />
-            <Input label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} required fullWidth />
-            <Input label="Fine Amount (BGN)" type="number" step="0.01" value={formData.fineAmount} onChange={(e) => setFormData({ ...formData, fineAmount: e.target.value })} fullWidth />
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(220, 38, 38, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#991b1b' }}>
+              <strong>⚠️ Recording a Violation</strong>
+              <p style={{ margin: '0.5rem 0 0 0' }}>Document fishing regulation violations discovered during inspections. Record violation details and assign fines for non-compliance.</p>
+            </div>
+
+            <Select
+              label="Inspection"
+              value={formData.inspectionId}
+              onChange={(e) => setFormData({ ...formData, inspectionId: e.target.value })}
+              required
+              fullWidth
+              helperText="Select the inspection where this violation was found"
+              options={[
+                { value: '', label: '-- Select Inspection --' },
+                ...inspections.map((inspection: any) => {
+                  const date = inspection.inspectionDateTime || inspection.inspectionDate;
+                  const dateStr = date ? new Date(date).toLocaleDateString() : 'N/A';
+                  const location = inspection.location || 'Unknown Location';
+                  return {
+                    value: inspection.id.toString(),
+                    label: `Inspection #${inspection.id} - ${dateStr} (${location})`
+                  };
+                })
+              ]}
+            />
+
+            <Select
+              label="Violation Type"
+              value={formData.violationType}
+              onChange={(e) => setFormData({ ...formData, violationType: e.target.value })}
+              required
+              fullWidth
+              helperText="Category of fishing regulation violated"
+              options={[
+                { value: '', label: '-- Select Violation Type --' },
+                { value: 'Illegal Fishing Gear', label: 'Illegal Fishing Gear' },
+                { value: 'Undersized Catch', label: 'Undersized Catch' },
+                { value: 'Prohibited Species', label: 'Prohibited Species' },
+                { value: 'Quota Exceeded', label: 'Quota Exceeded' },
+                { value: 'Fishing Without Permit', label: 'Fishing Without Permit' },
+                { value: 'Protected Area Violation', label: 'Protected Area Violation' },
+                { value: 'Closed Season Fishing', label: 'Closed Season Fishing' },
+                { value: 'Improper Documentation', label: 'Improper Documentation' },
+                { value: 'Safety Violation', label: 'Safety Violation' },
+                { value: 'Other', label: 'Other' },
+              ]}
+            />
+
+            <Input 
+              label="Description" 
+              value={formData.description} 
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
+              required 
+              fullWidth 
+              placeholder="Detailed description of the violation..."
+              helperText="Provide specific details about what regulation was violated and how"
+            />
+
+            <Input 
+              label="Fine Amount (EUR)" 
+              type="number" 
+              step="0.01" 
+              min="0"
+              value={formData.fineAmount} 
+              onChange={(e) => setFormData({ ...formData, fineAmount: e.target.value })} 
+              fullWidth 
+              placeholder="0.00"
+              helperText="Monetary fine imposed for this violation (leave empty if warning only)"
+            />
+
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button type="submit" variant="primary">{editingItem ? 'Update' : 'Create'}</Button>
+              <Button type="submit" variant="primary">{editingItem ? 'Update Violation' : 'Record Violation'}</Button>
             </div>
           </form>
         </Modal>

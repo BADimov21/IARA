@@ -49,6 +49,7 @@ public class ViolationService : BaseService, IViolationService
         var violation = new Violation
         {
             InspectionId = dto.InspectionId,
+            ViolationType = dto.ViolationType,
             Description = dto.Description,
             FineAmount = dto.FineAmount
         };
@@ -63,8 +64,9 @@ public class ViolationService : BaseService, IViolationService
     {
         var violation = GetAllFromDatabase().Where(v => v.Id == dto.Id).Single();
 
-        violation.InspectionId = dto.InspectionId;
-        violation.Description = dto.Description;
+        if (dto.InspectionId > 0) violation.InspectionId = dto.InspectionId;
+        if (!string.IsNullOrEmpty(dto.ViolationType)) violation.ViolationType = dto.ViolationType;
+        if (!string.IsNullOrEmpty(dto.Description)) violation.Description = dto.Description;
         if (dto.FineAmount != null) violation.FineAmount = dto.FineAmount.Value;
         
         // Handle payment status update
@@ -110,6 +112,7 @@ public class ViolationService : BaseService, IViolationService
                 {
                     Id = violation.Id,
                     InspectionId = violation.InspectionId,
+                    ViolationType = violation.ViolationType,
                     Description = violation.Description,
                     FineAmount = violation.FineAmount,
                     IsPaid = violation.IsPaid,

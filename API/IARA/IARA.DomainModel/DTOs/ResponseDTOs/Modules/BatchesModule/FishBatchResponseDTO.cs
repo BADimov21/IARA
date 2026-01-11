@@ -13,6 +13,7 @@ public class FishBatchResponseDTO
     public NomenclatureDTO Species { get; set; } = null!;
     public string BatchCode { get; set; } = null!;
     public decimal WeightKg { get; set; }
+    public int? Quantity { get; set; }
     public List<BatchLocationResponseDTO> BatchLocations { get; set; } = new();
 }
 

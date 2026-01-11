@@ -19,6 +19,9 @@ public partial class Landing
     [StringLength(100)]
     public string Port { get; set; } = null!;
 
+    [Column(TypeName = "decimal(10, 2)")]
+    public decimal TotalWeightKg { get; set; }
+
     [InverseProperty("Landing")]
     public virtual ICollection<FishBatch> FishBatches { get; set; } = new List<FishBatch>();
 
